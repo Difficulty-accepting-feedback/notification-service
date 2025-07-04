@@ -22,16 +22,16 @@ public class NoteJpaEntity {
     @Column(name = "senderId",  updatable = false, nullable = false)
     private Long senderId; // 발신자 멤버 ID
 
-    @Column(name = "senderId",  updatable = false, nullable = false)
+    @Column(name = "recipientId",  updatable = false, nullable = false)
     private Long recipientId; // 수신자 멤버 ID
 
-    @Column(name = "senderId",  updatable = false, nullable = false)
+    @Column(name = "content",  updatable = false, nullable = false)
     private String content; // 쪽지 내용
 
-    @Column(name = "senderId",  updatable = false, nullable = false)
+    @Column(name = "createdAt",  updatable = false, nullable = false)
     private LocalDateTime createdAt; // 생성 시간
 
-    @Column(name = "senderId",  updatable = false, nullable = false)
+    @Column(name = "isRead",  updatable = false, nullable = false)
     private Boolean isRead; // 조회 여부
 
     @Builder
