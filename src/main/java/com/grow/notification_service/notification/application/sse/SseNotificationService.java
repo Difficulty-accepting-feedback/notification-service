@@ -1,0 +1,8 @@
+package com.grow.notification_service.notification.application.sse;
+
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+public interface SseNotificationService {
+    SseEmitter subscribe(Long memberId);
+    void sendNotification(String message);
+}
