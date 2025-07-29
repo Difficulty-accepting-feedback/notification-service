@@ -93,6 +93,18 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// feign
+	implementation platform("org.springframework.cloud:spring-cloud-dependencies:2025.0.0")
+	implementation "org.springframework.cloud:spring-cloud-starter-openfeign"
+
+	// Actuator + AOP 추가 메트릭스 모니터링
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+	// resilience4j 추가
+	implementation 'io.github.resilience4j:resilience4j-all:2.3.0'
+	implementation 'io.github.resilience4j:resilience4j-spring-boot3'
 }
 
 tasks.named('test') {
