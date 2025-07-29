@@ -1,16 +1,15 @@
 package com.grow.notification_service.notification.infra.persistence.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Builder
 @Table(name = "notification")
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class NotificationJpaEntity {
 
@@ -34,17 +33,6 @@ public class NotificationJpaEntity {
     @Column(name = "notificationType", nullable = false, updatable = false)
     private NotificationType notificationType; // 알림 타입
 
-    @Builder
-    public NotificationJpaEntity(Long memberId,
-                                 String content,
-                                 LocalDateTime createdAt,
-                                 Boolean isRead,
-                                 NotificationType notificationType
-    ) {
-        this.memberId = memberId;
-        this.content = content;
-        this.createdAt = createdAt;
-        this.isRead = isRead;
-        this.notificationType = notificationType;
-    }
+    @Column(name = "isSent", nullable = false)
+    private Boolean isSent; // 알림 전송 여부 -> 처음 저장 시에는 false로 설정
 }
