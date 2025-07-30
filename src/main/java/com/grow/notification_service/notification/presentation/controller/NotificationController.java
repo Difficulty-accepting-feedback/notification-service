@@ -3,6 +3,7 @@ package com.grow.notification_service.notification.presentation.controller;
 import com.grow.notification_service.notification.application.NotificationService;
 import com.grow.notification_service.notification.application.sse.SseNotificationService;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
+import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
 import com.grow.notification_service.notification.presentation.dto.rsdata.RsData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,14 +45,34 @@ public class NotificationController {
 
     @PostMapping("/api/v1/notify")
     public RsData<String> triggerNotification(@RequestHeader("X-Authorization-Id") Long memberId,
-                                              @Valid @RequestParam("type") NotificationType notificationType,
+                                              @RequestParam("type") NotificationType notificationType,
                                               @RequestBody String message) {
 
+        // sendNotification 메서드 호출
         sseNotificationService.sendNotification(memberId, notificationType, message);
 
         return new RsData<>(
                 "200",
                 "알림 전송 완료"
+        );
+    }
+
+    /**
+     * 알림 요청을 받는 엔드포인트.
+     * OpenFeign 클라이언트로부터 전송된 NotificationRequestDto를 처리합니다.
+     *
+     * @param request 알림 요청 데이터 (NotificationRequestDto 객체)
+     */
+    @PostMapping("/notifications")
+    public void receiveNotification(@Valid @RequestBody NotificationRequestDto request) {
+        log.info("[Matching Notification] 매칭 알림 수신 완료 - memberId: {}, content: {}",
+                request.getMemberId(), request.getContent());
+
+        notificationService.processNotification(request); // DB에 저장 및 SSE 로 클라이언트에게 전송
+
+        new RsData<String>(
+                "200",
+                "알림 수신 완료"
         );
     }
 }
