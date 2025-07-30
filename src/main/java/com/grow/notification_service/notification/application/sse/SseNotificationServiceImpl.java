@@ -1,8 +1,8 @@
 package com.grow.notification_service.notification.application.sse;
 
 import com.grow.notification_service.notification.application.exception.SseException;
+import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -31,6 +31,7 @@ import static com.grow.notification_service.notification.application.exception.E
  *
  * <p><b>주의:</b> Emitter의 타임아웃은 기본적으로 1시간으로 설정되어 있으며,
  * 필요에 따라 조정할 수 있습니다. 연결 실패 시 커스텀 예외(SseException)를 발생시킵니다.
+ *
  * @see SseEmitter
  * @see SseException
  * @since 25.07.29 - 1.0.0
@@ -74,13 +75,39 @@ public class SseNotificationServiceImpl implements SseNotificationService {
     }
 
     /**
-     * 알림 메시지를 전송하는 메서드입니다.
-     * (현재 구현되지 않음 - 실제 로직 추가 필요)
+     * 특정 사용자에게 알림을 전송하는 메서드입니다.
+     * 주어진 memberId에 해당하는 SseEmitter를 조회하여 이벤트를 보냅니다.
+     * 이벤트 이름은 NotificationType의 title로 설정되며, 메시지를 데이터로 전송합니다.
      *
-     * @param message 전송할 알림 메시지.
+     * <p>Emitter가 존재하지 않으면 연결 실패로 간주하고 SseException을 발생시킵니다.
+     * <p><b>로그:</b> 전송 성공 시 INFO 로그를, 실패 시 ERROR 로그를 기록합니다. </p>
+     *
+     * <p><b>주의:</b> 이 메서드는 SSE 연결이 이미 subscribe를 통해 설정되어 있어야 동작합니다.
+     * IOException 발생 시 로그만 기록하고 예외를 재throw하지 않으나, 필요에 따라 처리 로직을 추가할 수 있습니다.
+     *
+     * @param memberId 알림을 받을 사용자의 ID. Long 타입으로, null이 아닌 유효한 값이어야 합니다.
+     * @param notificationType 알림 유형. 이벤트 이름으로 사용됩니다.
+     * @param message 전송할 알림 메시지. 문자열 형식입니다.
+     * @throws SseException Emitter가 null인 경우 (연결되지 않음) 발생합니다.
      */
     @Override
-    public void sendNotification(String message) {
+    public void sendNotification(Long memberId,
+                                 NotificationType notificationType,
+                                 String message) {
+        SseEmitter emitter = sseEmitters.get(memberId);
+        if (emitter != null) {
+            try {
+                emitter.send(SseEmitter.event().name(notificationType.getTitle()).data(message));
+                log.info("[Matching Notification] 알림 메시지 전송 완료 - memberId: {}, title: {}, message: {}",
+                        memberId, notificationType.getTitle(), message);
+            } catch (IOException e) {
+                log.error("[Matching Notification] 알림 메시지 전송 실패 - memberId: {}, title: {}, message: {}",
+                        memberId, notificationType.getTitle(), message);
+            }
+            return;
+        }
 
+        log.warn("[Matching Notification] SSE 연결 실패 - memberId: {}", memberId);
+        throw new SseException(SSE_NOT_CONNECTED);
     }
 }
