@@ -1,9 +1,13 @@
 package com.grow.notification_service.notification.application.sse;
 
+import com.grow.notification_service.notification.application.event.NotificationSavedEvent;
 import com.grow.notification_service.notification.application.exception.SseException;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
+import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -109,5 +113,27 @@ public class SseNotificationServiceImpl implements SseNotificationService {
 
         log.warn("[Matching Notification] SSE 연결 실패 - memberId: {}", memberId);
         throw new SseException(SSE_NOT_CONNECTED);
+    }
+
+    /**
+     * 이벤트 리스너: SSE로 알림 전송 (비동기)
+     * NotificationSavedEvent를 수신하여 이벤트에 포함된 DTO를 추출한 후,
+     * sendNotification 메서드를 호출하여 SSE 알림을 전송합니다.
+     *
+     * <p>이 메서드는 @Async로 비동기 처리되며, @EventListener로 이벤트를 리스닝합니다.
+     *
+     * @param event 저장된 알림 이벤트 (NotificationSavedEvent). dto를 포함합니다.
+     */
+    @Async
+    @Override
+    @EventListener
+    public void sendNotification(NotificationSavedEvent event) {
+        NotificationRequestDto dto = event.getDto();
+
+        sendNotification(
+                dto.getMemberId(),
+                dto.getNotificationType(),
+                dto.getContent()
+        );
     }
 }
