@@ -2,7 +2,7 @@ package com.grow.notification_service.notification.presentation.controller;
 
 import com.grow.notification_service.notification.application.NotificationService;
 import com.grow.notification_service.notification.application.sse.SseNotificationService;
-import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
+import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
 import com.grow.notification_service.notification.presentation.dto.rsdata.RsData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,10 +35,23 @@ public class NotificationController {
      * @param memberId 클라이언트의 사용자 ID (헤더에서 추출됨). Long 타입으로, null이 아닌 유효한 ID여야 합니다.
      * @return SseEmitter 객체. 이 객체를 통해 서버-클라이언트 간 SSE 연결이 유지됩니다.
      */
-    @GetMapping(value = "/api/v1/notification/subscribe",
+    @GetMapping(value = "/api/v1/notification/subscribe/{memberId}",
             produces = MediaType.TEXT_EVENT_STREAM_VALUE
     )
     public SseEmitter subscribe(@RequestHeader("X-Authorization-Id") Long memberId) {
         return sseNotificationService.subscribe(memberId);
+    }
+
+    @PostMapping("/api/v1/notify")
+    public RsData<String> triggerNotification(@RequestHeader("X-Authorization-Id") Long memberId,
+                                              @Valid @RequestParam("type") NotificationType notificationType,
+                                              @RequestBody String message) {
+
+        sseNotificationService.sendNotification(memberId, notificationType, message);
+
+        return new RsData<>(
+                "200",
+                "알림 전송 완료"
+        );
     }
 }
