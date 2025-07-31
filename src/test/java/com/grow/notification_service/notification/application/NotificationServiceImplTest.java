@@ -2,7 +2,7 @@ package com.grow.notification_service.notification.application;
 
 import com.grow.notification_service.notification.application.event.NotificationSavedEvent;
 import com.grow.notification_service.notification.application.exception.SseException;
-import com.grow.notification_service.notification.application.sse.SseNotificationService;
+import com.grow.notification_service.notification.application.sse.SseSendService;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationJpaEntity;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
 import com.grow.notification_service.notification.infra.persistence.repository.NotificationJpaRepository;
@@ -34,7 +34,7 @@ class NotificationServiceImplTest {
     private NotificationServiceImpl notificationService;
 
     @MockitoSpyBean
-    private SseNotificationService sseNotificationService;
+    private SseSendService sseSendService;
 
     @Autowired
     private NotificationJpaRepository notificationJpaRepository;
@@ -47,7 +47,7 @@ class NotificationServiceImplTest {
     void testEventPublishingAndSseSendingOnSave() {
         // given: SSE 연결 설정 (emitter 생성 및 등록)
         Long memberId = 1L;
-        sseNotificationService.subscribe(memberId);  // SSE 연결 구독
+        sseSendService.subscribe(memberId);  // SSE 연결 구독
 
         NotificationRequestDto request = NotificationRequestDto.builder()
                 .memberId(memberId)
@@ -72,7 +72,7 @@ class NotificationServiceImplTest {
         ArgumentCaptor<NotificationType> typeCaptor = ArgumentCaptor.forClass(NotificationType.class);
         ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
 
-        verify(sseNotificationService, timeout(5000).times(1))  // 비동기 대기
+        verify(sseSendService, timeout(5000).times(1))  // 비동기 대기
                 .sendNotification(memberIdCaptor.capture(), typeCaptor.capture(), messageCaptor.capture());
 
         assertThat(memberIdCaptor.getValue()).isEqualTo(memberId);
@@ -99,7 +99,7 @@ class NotificationServiceImplTest {
         assertThat(savedNotifications).hasSize(1);
 
         // 이벤트는 발행되었으나 SSE 전송에서 예외 발생
-        assertThrows(SseException.class, () -> sseNotificationService.sendNotification(
+        assertThrows(SseException.class, () -> sseSendService.sendNotification(
                 1L,
                 NotificationType.MATCHING_SUCCESS,
                 "테스트 알림 내용")
@@ -111,7 +111,7 @@ class NotificationServiceImplTest {
     void testAsyncEventHandling() {
         // given: SSE 연결 설정
         Long memberId = 1L;
-        sseNotificationService.subscribe(memberId);
+        sseSendService.subscribe(memberId);
 
         NotificationRequestDto request = NotificationRequestDto.builder()
                 .memberId(memberId)
@@ -124,13 +124,13 @@ class NotificationServiceImplTest {
             String currentThreadName = Thread.currentThread().getName();
             assertThat(currentThreadName).startsWith("task-");  // @Async 기본 풀 이름 확인
             return invocation.callRealMethod();
-        }).when(sseNotificationService).sendNotification(any(Long.class), any(NotificationType.class), any(String.class));
+        }).when(sseSendService).sendNotification(any(Long.class), any(NotificationType.class), any(String.class));
 
         // when: 알림 처리
         notificationService.processNotification(request);
 
         // then: 비동기 호출 확인 (verify로 메서드 호출)
-        verify(sseNotificationService, timeout(5000).times(1))
+        verify(sseSendService, timeout(5000).times(1))
                 .sendNotification(any(Long.class), any(NotificationType.class), any(String.class));
     }
 }

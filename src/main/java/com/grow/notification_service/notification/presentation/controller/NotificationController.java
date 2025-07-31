@@ -1,7 +1,7 @@
 package com.grow.notification_service.notification.presentation.controller;
 
 import com.grow.notification_service.notification.application.NotificationService;
-import com.grow.notification_service.notification.application.sse.SseNotificationService;
+import com.grow.notification_service.notification.application.sse.SseSendService;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
 import com.grow.notification_service.notification.presentation.dto.rsdata.RsData;
@@ -18,7 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final SseNotificationService sseNotificationService;
+    private final SseSendService sseSendService;
 
     /**
      * SSE (Server-Sent Events) 연결을 위한 구독 엔드포인트입니다.
@@ -40,7 +40,7 @@ public class NotificationController {
             produces = MediaType.TEXT_EVENT_STREAM_VALUE
     )
     public SseEmitter subscribe(@RequestHeader("X-Authorization-Id") Long memberId) {
-        return sseNotificationService.subscribe(memberId);
+        return sseSendService.subscribe(memberId);
     }
 
     @PostMapping("/api/v1/notify")
@@ -49,7 +49,7 @@ public class NotificationController {
                                               @RequestBody String message) {
 
         // sendNotification 메서드 호출
-        sseNotificationService.sendNotification(memberId, notificationType, message);
+        sseSendService.sendNotification(memberId, notificationType, message);
 
         return new RsData<>(
                 "200",
