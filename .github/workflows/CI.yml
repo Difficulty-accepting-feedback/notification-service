@@ -43,8 +43,8 @@ jobs:
             ${{ runner.os }}-gradle-
 
       # 임시 설정 -> 추후 ConfigMap 활용 예정
-      # - name: create application.yml
-      #  run: echo "${{ secrets.APPLICATION_PROPERTIES }}" | base64 --decode > src/main/resources/application.yml
+      - name: create application.yml
+        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" | base64 --decode > src/main/resources/application.yml
 
       # Gradle 빌드 실행 + 테스트를 포함
       - name: Build with Gradle
