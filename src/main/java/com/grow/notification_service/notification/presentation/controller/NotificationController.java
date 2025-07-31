@@ -1,8 +1,9 @@
 package com.grow.notification_service.notification.presentation.controller;
 
 import com.grow.notification_service.notification.application.NotificationService;
-import com.grow.notification_service.notification.application.sse.SseNotificationService;
+import com.grow.notification_service.notification.application.sse.SseSendService;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
+import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
 import com.grow.notification_service.notification.presentation.dto.rsdata.RsData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final SseNotificationService sseNotificationService;
+    private final SseSendService sseSendService;
 
     /**
      * SSE (Server-Sent Events) 연결을 위한 구독 엔드포인트입니다.
@@ -39,19 +40,39 @@ public class NotificationController {
             produces = MediaType.TEXT_EVENT_STREAM_VALUE
     )
     public SseEmitter subscribe(@RequestHeader("X-Authorization-Id") Long memberId) {
-        return sseNotificationService.subscribe(memberId);
+        return sseSendService.subscribe(memberId);
     }
 
     @PostMapping("/api/v1/notify")
     public RsData<String> triggerNotification(@RequestHeader("X-Authorization-Id") Long memberId,
-                                              @Valid @RequestParam("type") NotificationType notificationType,
+                                              @RequestParam("type") NotificationType notificationType,
                                               @RequestBody String message) {
 
-        sseNotificationService.sendNotification(memberId, notificationType, message);
+        // sendNotification 메서드 호출
+        sseSendService.sendNotification(memberId, notificationType, message);
 
         return new RsData<>(
                 "200",
                 "알림 전송 완료"
+        );
+    }
+
+    /**
+     * 알림 요청을 받는 엔드포인트.
+     * OpenFeign 클라이언트로부터 전송된 NotificationRequestDto를 처리합니다.
+     *
+     * @param request 알림 요청 데이터 (NotificationRequestDto 객체)
+     */
+    @PostMapping("/notifications")
+    public void receiveNotification(@Valid @RequestBody NotificationRequestDto request) {
+        log.info("[Matching Notification] 매칭 알림 수신 완료 - memberId: {}, content: {}",
+                request.getMemberId(), request.getContent());
+
+        notificationService.processNotification(request); // DB에 저장 및 SSE 로 클라이언트에게 전송
+
+        new RsData<String>(
+                "200",
+                "알림 수신 완료"
         );
     }
 }

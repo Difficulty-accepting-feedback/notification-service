@@ -23,10 +23,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
 @ExtendWith(MockitoExtension.class)
-class SseNotificationServiceImplTest {
+class SseSendServiceImplTest {
 
     @InjectMocks
-    private SseNotificationServiceImpl sseNotificationService;
+    private SseSendServiceImpl sseNotificationService;
 
     private Map<Long, SseEmitter> sseEmitters;
 
