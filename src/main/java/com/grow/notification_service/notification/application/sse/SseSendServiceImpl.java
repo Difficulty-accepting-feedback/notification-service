@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -43,7 +45,7 @@ import static com.grow.notification_service.notification.application.exception.E
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SseNotificationServiceImpl implements SseNotificationService {
+public class SseSendServiceImpl implements SseSendService {
 
     private final Map<Long, SseEmitter> sseEmitters = new ConcurrentHashMap<>();
 
@@ -126,8 +128,8 @@ public class SseNotificationServiceImpl implements SseNotificationService {
      */
     @Async
     @Override
-    @EventListener
-    public void sendNotification(NotificationSavedEvent event) {
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleNotificationSavedEvent(NotificationSavedEvent event) {
         NotificationRequestDto dto = event.getDto();
 
         sendNotification(
