@@ -46,7 +46,8 @@ public class NotificationController {
         HttpServletResponse response
     ) {
         // SSE  헤더
-        response.setHeader("Cache-Control", "no-cache"); // 브라우저 캐시 방지
+        response.setHeader("Content-Type", "text/event-stream");
+        response.setHeader("Cache-Control", "no-cache, no-transform"); // 캐시 방지
         response.setHeader("Connection", "keep-alive"); // 연결 유지
         response.setHeader("X-Accel-Buffering", "no"); // nginx 프록시 버퍼링 방지
         response.setCharacterEncoding("UTF-8"); // UTF-8 인코딩 설정

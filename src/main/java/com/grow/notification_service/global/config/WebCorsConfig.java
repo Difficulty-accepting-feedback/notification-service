@@ -9,10 +9,26 @@ public class WebCorsConfig implements WebMvcConfigurer {
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
 		registry.addMapping("/**")
-			.allowedOrigins("http://localhost:3000") // Next.js
-			.allowedMethods("GET", "POST", "DELETE", "OPTIONS")
-			.allowedHeaders("X-Authorization-Id", "Content-Type", "Accept", "Origin")
+			.allowedOriginPatterns("http://localhost:*")
+			.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+			.allowedHeaders(
+				"X-Authorization-Id",
+				"Content-Type",
+				"Accept",
+				"Origin",
+				"Last-Event-ID",
+				"Cache-Control",
+				"Pragma"
+			)
+			// 클라이언트에서 쿠키/세션 쓰면 필수
 			.allowCredentials(true)
-			.maxAge(3600);
+			// 노출 헤더(필수는 아님, 디버깅 편의용)
+			.exposedHeaders(
+				"Content-Type",
+				"Cache-Control",
+				"X-Accel-Buffering"
+			)
+			// 프리플라이트 캐시
+			.maxAge(86400);
 	}
 }
