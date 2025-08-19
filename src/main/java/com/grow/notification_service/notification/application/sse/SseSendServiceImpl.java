@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -67,13 +68,29 @@ public class SseSendServiceImpl implements SseSendService {
     public SseEmitter subscribe(Long memberId) {
         SseEmitter emitter = new SseEmitter(60L * 1000 * 60); // 타임아웃 1시간 (더 늘려야 할 수도 있음... 몰라서 일단 한 시간 함)
 
+        // 기존 연결이 있으면 먼저 종료
+        SseEmitter old = sseEmitters.put(memberId, emitter);
+        if (old != null) {
+            try { old.complete(); } catch (Exception ignored) {}
+        }
+
+        emitter.onCompletion(() -> sseEmitters.remove(memberId, emitter));
+        emitter.onTimeout(() -> {
+            sseEmitters.remove(memberId, emitter);
+            emitter.complete();
+        });
+        emitter.onError((ex) -> {
+            sseEmitters.remove(memberId, emitter);
+            try { emitter.completeWithError(ex); } catch (Exception ignored) {}
+        });
+
         // 연결이 되었을 시에 더미 이벤트 전송 (연결 유지 테스트)
         try {
             emitter.send(SseEmitter.event().name("[connect]").data("연결이 성공했습니다!"));
             sseEmitters.put(memberId, emitter);
-            log.info("[Matching Notification] SSE 연결 성공 - memberId: {}", memberId);
+            log.info("[Notification] SSE 연결 성공 - memberId: {}", memberId);
         } catch (IOException e) {
-            log.error("[Matching Notification] SSE 연결 실패 - memberId: {}", memberId);
+            log.error("[Notification] SSE 연결 실패 - memberId: {}", memberId);
             throw new SseException(SSE_NOT_CONNECTED, e); // 예외 감싸서 전파
         }
 
@@ -104,10 +121,10 @@ public class SseSendServiceImpl implements SseSendService {
         if (emitter != null) {
             try {
                 emitter.send(SseEmitter.event().name(notificationType.getTitle()).data(message));
-                log.info("[Matching Notification] 알림 메시지 전송 완료 - memberId: {}, title: {}, message: {}",
+                log.info("[Notification] 알림 메시지 전송 완료 - memberId: {}, title: {}, message: {}",
                         memberId, notificationType.getTitle(), message);
             } catch (IOException e) {
-                log.error("[Matching Notification] 알림 메시지 전송 실패 - memberId: {}, title: {}, message: {}",
+                log.error("[Notification] 알림 메시지 전송 실패 - memberId: {}, title: {}, message: {}",
                         memberId, notificationType.getTitle(), message);
             }
             return;
@@ -137,5 +154,19 @@ public class SseSendServiceImpl implements SseSendService {
                 dto.getNotificationType(),
                 dto.getContent()
         );
+    }
+
+    @Scheduled(fixedDelay = 25_000)
+    public void sendHeartbeat() {
+        sseEmitters.forEach((memberId, emitter) -> {
+            try {
+                emitter.send(SseEmitter.event().name("ping").data("💚"));
+            } catch (IOException e) {
+                // 전송 실패하면 정리
+                sseEmitters.remove(memberId);
+                try { emitter.complete(); } catch (Exception ignored) {}
+                log.debug("[Notification] heartbeat 실패로 emitter 제거 - memberId: {}", memberId);
+            }
+        });
     }
 }
