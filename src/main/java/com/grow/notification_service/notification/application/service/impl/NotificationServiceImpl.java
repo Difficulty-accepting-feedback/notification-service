@@ -1,6 +1,7 @@
-package com.grow.notification_service.notification.application;
+package com.grow.notification_service.notification.application.service.impl;
 
 import com.grow.notification_service.notification.application.event.NotificationSavedEvent;
+import com.grow.notification_service.notification.application.service.NotificationService;
 import com.grow.notification_service.notification.domain.model.Notification;
 import com.grow.notification_service.notification.domain.repository.NotificationRepository;
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
