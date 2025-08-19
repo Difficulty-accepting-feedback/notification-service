@@ -130,7 +130,7 @@ public class SseSendServiceImpl implements SseSendService {
             return;
         }
 
-        log.warn("[Matching Notification] SSE 연결 실패 - memberId: {}", memberId);
+        log.warn("[Notification] SSE 연결 실패 - memberId: {}", memberId);
         throw new SseException(SSE_NOT_CONNECTED);
     }
 
