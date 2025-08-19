@@ -1,6 +1,7 @@
 package com.grow.notification_service.notification.application;
 
 import com.grow.notification_service.notification.application.event.NotificationSavedEvent;
+import com.grow.notification_service.notification.application.service.impl.NotificationServiceImpl;
 import com.grow.notification_service.notification.application.sse.SseSendService;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationJpaEntity;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
