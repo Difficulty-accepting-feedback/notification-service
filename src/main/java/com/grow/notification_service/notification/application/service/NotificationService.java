@@ -1,4 +1,4 @@
-package com.grow.notification_service.notification.application;
+package com.grow.notification_service.notification.application.service;
 
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
 

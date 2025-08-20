@@ -1,10 +1,12 @@
 package com.grow.notification_service.notification.presentation.controller;
 
-import com.grow.notification_service.notification.application.NotificationService;
+import com.grow.notification_service.notification.application.service.NotificationService;
 import com.grow.notification_service.notification.application.sse.SseSendService;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
 import com.grow.notification_service.notification.presentation.dto.rsdata.RsData;
+
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,10 +38,20 @@ public class NotificationController {
      * @param memberId 클라이언트의 사용자 ID (헤더에서 추출됨). Long 타입으로, null이 아닌 유효한 ID여야 합니다.
      * @return SseEmitter 객체. 이 객체를 통해 서버-클라이언트 간 SSE 연결이 유지됩니다.
      */
-    @GetMapping(value = "/api/v1/notification/subscribe/{memberId}",
+    @GetMapping(value = "/api/v1/notification/subscribe",
             produces = MediaType.TEXT_EVENT_STREAM_VALUE
     )
-    public SseEmitter subscribe(@RequestHeader("X-Authorization-Id") Long memberId) {
+    public SseEmitter subscribe(
+        @RequestHeader("X-Authorization-Id") Long memberId,
+        HttpServletResponse response
+    ) {
+        // SSE  헤더
+        response.setHeader("Content-Type", "text/event-stream");
+        response.setHeader("Cache-Control", "no-cache, no-transform"); // 캐시 방지
+        response.setHeader("Connection", "keep-alive"); // 연결 유지
+        response.setHeader("X-Accel-Buffering", "no"); // nginx 프록시 버퍼링 방지
+        response.setCharacterEncoding("UTF-8"); // UTF-8 인코딩 설정
+
         return sseSendService.subscribe(memberId);
     }
 
@@ -65,7 +77,7 @@ public class NotificationController {
      */
     @PostMapping("/notifications")
     public void receiveNotification(@Valid @RequestBody NotificationRequestDto request) {
-        log.info("[Matching Notification] 매칭 알림 수신 완료 - memberId: {}, content: {}",
+        log.info("[Notification] 알림 수신 완료 - memberId: {}, content: {}",
                 request.getMemberId(), request.getContent());
 
         notificationService.processNotification(request); // DB에 저장 및 SSE 로 클라이언트에게 전송

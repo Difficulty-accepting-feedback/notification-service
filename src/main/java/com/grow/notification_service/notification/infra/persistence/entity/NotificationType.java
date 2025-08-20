@@ -13,7 +13,8 @@ public enum NotificationType {
     MATCHING_SUCCESS("[매칭 업데이트]"),
     MESSAGE("[쪽지]"),
     INQUIRY_ANSWER("[문의 답변]"),
-    REVIEW("[리뷰]");
+    REVIEW("[리뷰]"),
+    PAYMENT("[결제]");
 
     private final String title;
 

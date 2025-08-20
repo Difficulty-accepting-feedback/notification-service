@@ -1,6 +1,7 @@
-package com.grow.notification_service.notification.application;
+package com.grow.notification_service.notification.application.service.impl;
 
 import com.grow.notification_service.notification.application.event.NotificationSavedEvent;
+import com.grow.notification_service.notification.application.service.NotificationService;
 import com.grow.notification_service.notification.domain.model.Notification;
 import com.grow.notification_service.notification.domain.repository.NotificationRepository;
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
@@ -60,7 +61,7 @@ public class NotificationServiceImpl implements NotificationService {
         saveNotification(request);
         // 2. 푸시 알림 전송 이벤트 발행
         publisher.publishEvent(new NotificationSavedEvent(this, request)); // SSE 트리거 이벤트 발행
-        log.info("[Matching Notification] 매칭 알림 이벤트 발행 완료 - memberId: {}, content: {}",
+        log.info("[Notification] 매칭 알림 이벤트 발행 완료 - memberId: {}, content: {}",
                 request.getMemberId(), request.getContent());
     }
 
@@ -81,7 +82,7 @@ public class NotificationServiceImpl implements NotificationService {
                         Clock.systemDefaultZone(),
                         request.getNotificationType()
                 ));
-        log.info("[Matching Notification] 매칭 알림 저장 완료 - memberId: {}, content: {}",
+        log.info("[Notification] 매칭 알림 저장 완료 - memberId: {}, content: {}",
                 request.getMemberId(), request.getContent());
     }
 }
