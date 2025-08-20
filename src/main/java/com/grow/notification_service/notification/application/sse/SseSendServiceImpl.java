@@ -66,18 +66,19 @@ public class SseSendServiceImpl implements SseSendService {
      */
     @Override
     public SseEmitter subscribe(Long memberId) {
-        SseEmitter emitter = new SseEmitter(60L * 1000 * 60); // 타임아웃 1시간 (더 늘려야 할 수도 있음... 몰라서 일단 한 시간 함)
 
         // 기존 연결이 있으면 먼저 종료
-        SseEmitter old = sseEmitters.put(memberId, emitter);
+        SseEmitter old = sseEmitters.remove(memberId);
         if (old != null) {
             try { old.complete(); } catch (Exception ignored) {}
         }
 
+        SseEmitter emitter = new SseEmitter(60L * 1000 * 60); // 타임아웃 1시간 (더 늘려야 할 수도 있음... 몰라서 일단 한 시간 함)
+
         emitter.onCompletion(() -> sseEmitters.remove(memberId, emitter));
         emitter.onTimeout(() -> {
             sseEmitters.remove(memberId, emitter);
-            emitter.complete();
+            try { emitter.complete(); } catch (Exception ignored) {}
         });
         emitter.onError((ex) -> {
             sseEmitters.remove(memberId, emitter);
