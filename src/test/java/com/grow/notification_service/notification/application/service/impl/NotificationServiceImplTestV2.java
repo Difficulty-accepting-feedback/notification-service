@@ -1,7 +1,7 @@
-package com.grow.notification_service.notification.application;
+package com.grow.notification_service.notification.application.service.impl;
 
 import com.grow.notification_service.notification.application.exception.SseException;
-import com.grow.notification_service.notification.application.service.impl.NotificationServiceImpl;
+import com.grow.notification_service.notification.application.service.NotificationService;
 import com.grow.notification_service.notification.application.sse.SseSendService;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationJpaEntity;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class NotificationServiceImplTestV2 {
 
     @Autowired
-    private NotificationServiceImpl notificationService;
+    private NotificationService notificationService;
 
     @MockitoSpyBean
     private SseSendService sseSendService;

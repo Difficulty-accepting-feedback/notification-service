@@ -1,6 +1,6 @@
-package com.grow.notification_service.notification.application;
+package com.grow.notification_service.notification.application.service.impl;
 
-import com.grow.notification_service.notification.application.service.impl.NotificationServiceImpl;
+import com.grow.notification_service.notification.application.service.NotificationService;
 import com.grow.notification_service.notification.application.sse.SseSendService;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 class NotificationServiceImplTestV3 {
 
     @Autowired
-    private NotificationServiceImpl notificationService;
+    private NotificationService notificationService;
 
     @MockitoSpyBean
     private SseSendService sseSendService;
