@@ -75,6 +75,7 @@ public class SseSendServiceImpl implements SseSendService {
 
         SseEmitter emitter = new SseEmitter(60L * 1000 * 60); // 타임아웃 1시간 (더 늘려야 할 수도 있음... 몰라서 일단 한 시간 함)
 
+        // 연결 종료, 타임아웃, 에러 발생 시 Emitter를 Map에서 제거
         emitter.onCompletion(() -> sseEmitters.remove(memberId, emitter));
         emitter.onTimeout(() -> {
             sseEmitters.remove(memberId, emitter);
@@ -157,6 +158,15 @@ public class SseSendServiceImpl implements SseSendService {
         );
     }
 
+    /**
+     * 정기적으로 실행되는 메서드로, 모든 SSE Emitter에 대해
+     * "ping" 이벤트를 전송하여 연결 상태를 확인합니다.
+     * <p>이 메서드는 25초마다 실행되며, 각 Emitter에 대해
+     * "💚" 이모지를 데이터로 전송합니다.
+     * <p>전송 중 IOException이 발생하면 해당 Emitter를 Map에서 제거하고
+     * 완료 상태로 설정합니다. 이로 인해 연결이 끊어진 Emitter는
+     * 다음 heartbeat에서 제외됩니다.
+     */
     @Scheduled(fixedDelay = 25_000)
     public void sendHeartbeat() {
         sseEmitters.forEach((memberId, emitter) -> {
