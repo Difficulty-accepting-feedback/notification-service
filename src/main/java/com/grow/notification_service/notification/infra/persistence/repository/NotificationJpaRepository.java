@@ -26,7 +26,7 @@ public interface NotificationJpaRepository extends JpaRepository<NotificationJpa
         )
         from NotificationJpaEntity n
         where n.memberId = :memberId
-        order by n.createdAt desc
+        order by n.isRead asc, n.createdAt desc
     """)
 	Page<NotificationListItemResponse> findPage(@Param("memberId") Long memberId, Pageable pageable);
 
