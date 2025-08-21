@@ -167,11 +167,11 @@ public class SseSendServiceImpl implements SseSendService {
      * 완료 상태로 설정합니다. 이로 인해 연결이 끊어진 Emitter는
      * 다음 heartbeat에서 제외됩니다.
      */
-    @Scheduled(fixedDelay = 25_000)
     public void sendHeartbeat() {
         sseEmitters.forEach((memberId, emitter) -> {
             try {
                 emitter.send(SseEmitter.event().name("ping").data("💚"));
+                log.info("[Notification] heartbeat 전송 성공 - memberId: {}", memberId);
             } catch (IOException e) {
                 // 전송 실패하면 정리
                 sseEmitters.remove(memberId);

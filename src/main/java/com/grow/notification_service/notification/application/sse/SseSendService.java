@@ -12,4 +12,5 @@ public interface SseSendService {
                           NotificationType notificationType,
                           String message);
     void handleNotificationSavedEvent(NotificationSavedEvent event);
+    void sendHeartbeat();
 }
