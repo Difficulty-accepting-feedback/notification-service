@@ -61,7 +61,7 @@ public class NotificationServiceImpl implements NotificationService {
         saveNotification(request);
         // 2. 푸시 알림 전송 이벤트 발행
         publisher.publishEvent(new NotificationSavedEvent(this, request)); // SSE 트리거 이벤트 발행
-        log.info("[Notification] 매칭 알림 이벤트 발행 완료 - memberId: {}, content: {}",
+        log.info("[Notification] 알림 이벤트 발행 완료 - memberId: {}, content: {}",
                 request.getMemberId(), request.getContent());
     }
 
@@ -82,7 +82,7 @@ public class NotificationServiceImpl implements NotificationService {
                         Clock.systemDefaultZone(),
                         request.getNotificationType()
                 ));
-        log.info("[Notification] 매칭 알림 저장 완료 - memberId: {}, content: {}",
+        log.info("[Notification] 알림 저장 완료 - memberId: {}, content: {}",
                 request.getMemberId(), request.getContent());
     }
 }
