@@ -6,11 +6,13 @@ import com.grow.notification_service.note.presentation.dto.SendNoteRequest;
 import com.grow.notification_service.note.domain.model.Note;
 import com.grow.notification_service.note.domain.repository.NoteRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NoteApplicationService {
@@ -25,6 +27,10 @@ public class NoteApplicationService {
 	public NoteResponse send(Long senderId, SendNoteRequest req) {
 		Note note = Note.create(senderId, req.recipientId(), req.content());
 		Note saved = noteRepository.save(note);
+
+		log.info("[쪽지] 전송이 완료되었습니다. - senderId={}, recipientId={}, noteId={}",
+			senderId, saved.getRecipientId(), saved.getNoteId());
+
 		return NoteResponse.from(saved);
 	}
 
@@ -35,6 +41,10 @@ public class NoteApplicationService {
 	@Transactional(readOnly = true)
 	public NotePageResponse inbox(Long memberId, int page, int size) {
 		Page<Note> notePage = noteRepository.findReceived(memberId, PageRequest.of(page, size));
+
+		log.debug("[쪽지] 받은 쪽지함 조회 - memberId={}, page={}, size={}, totalElements={}",
+			memberId, page, size, notePage.getTotalElements());
+
 		return NotePageResponse.from(notePage);
 	}
 
@@ -45,6 +55,10 @@ public class NoteApplicationService {
 	@Transactional(readOnly = true)
 	public NotePageResponse outbox(Long memberId, int page, int size) {
 		Page<Note> notePage = noteRepository.findSent(memberId, PageRequest.of(page, size));
+
+		log.debug("[쪽지] 보낸 쪽지함 조회 - memberId={}, page={}, size={}, totalElements={}",
+			memberId, page, size, notePage.getTotalElements());
+
 		return NotePageResponse.from(notePage);
 	}
 
@@ -55,6 +69,7 @@ public class NoteApplicationService {
 	@Transactional
 	public void markRead(Long memberId, Long noteId) {
 		noteRepository.markRead(noteId, memberId);
+		log.info("[쪽지] 읽음 처리 - memberId={}, noteId={}", memberId, noteId);
 	}
 
 	/**
@@ -63,8 +78,12 @@ public class NoteApplicationService {
 	 */
 	@Transactional
 	public void delete(Long memberId, Long noteId) {
+		log.debug("[쪽지] 삭제 요청 - memberId={}, noteId={}", memberId, noteId);
+
 		noteRepository.softDelete(noteId, memberId);
 		noteRepository.deletePhysicallyIfBothDeleted(noteId);
+
+		log.info("[쪽지] 삭제 처리 완료 - memberId={}, noteId={}", memberId, noteId);
 	}
 
 	/**
@@ -73,6 +92,8 @@ public class NoteApplicationService {
 	 */
 	@Transactional(readOnly = true)
 	public long unreadCount(Long memberId) {
-		return noteRepository.countUnread(memberId);
+		long count = noteRepository.countUnread(memberId);
+		log.debug("[쪽지] 미읽음 카운트 조회 - memberId={}, count={}", memberId, count);
+		return count;
 	}
 }
