@@ -21,6 +21,9 @@ public class Note {
     public static Note create(Long senderId, Long recipientId, String content) {
         Objects.requireNonNull(senderId, "senderId");
         Objects.requireNonNull(recipientId, "recipientId");
+        if (senderId.equals(recipientId)) {
+            throw new IllegalArgumentException("자기 자신에게는 쪽지를 보낼 수 없습니다.");
+        }
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("쪽지 내용은 비어있을 수 없습니다.");
         }
