@@ -47,23 +47,26 @@ public class NoteRepositoryImpl implements NoteRepository {
 
     @Override
     public void markRead(Long noteId, Long byMemberId) {
-        NoteJpaEntity e = jpa.findById(noteId).orElseThrow();
-        if (!e.getRecipientId().equals(byMemberId)) {
-            throw new IllegalStateException("수신자만 읽음 처리 가능");
-        }
-        if (!Boolean.TRUE.equals(e.getIsRead())) {
-            e.markRead();
-            jpa.save(e);
-        }
+        NoteJpaEntity entity = jpa.findById(noteId).orElseThrow();
+        Note domain = mapper.toDomain(entity);
+
+        domain.markRead(byMemberId);
+
+        jpa.save(mapper.toEntity(domain));
     }
 
     @Override
     public void softDelete(Long noteId, Long byMemberId) {
-        NoteJpaEntity e = jpa.findById(noteId).orElseThrow();
-        if (e.getSenderId().equals(byMemberId)) e.deleteBySender();
-        else if (e.getRecipientId().equals(byMemberId)) e.deleteByRecipient();
-        else throw new IllegalStateException("삭제 권한 없음");
-        jpa.save(e);
+        NoteJpaEntity entity = jpa.findById(noteId).orElseThrow();
+        Note domain = mapper.toDomain(entity);
+
+        domain.deleteBy(byMemberId);
+
+        if (domain.deletablePhysically()) {
+            jpa.delete(entity);      // 판단은 도메인, 실행은 인프라
+        } else {
+            jpa.save(mapper.toEntity(domain));
+        }
     }
 
     @Override

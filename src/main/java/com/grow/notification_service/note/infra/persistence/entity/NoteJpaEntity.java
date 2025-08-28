@@ -44,8 +44,4 @@ public class NoteJpaEntity {
 
     @Column(name = "recipientDeleted", nullable = false)
     private Boolean recipientDeleted;
-
-    public void markRead() { this.isRead = true; }
-    public void deleteBySender() { this.senderDeleted = true; }
-    public void deleteByRecipient() { this.recipientDeleted = true; }
 }
