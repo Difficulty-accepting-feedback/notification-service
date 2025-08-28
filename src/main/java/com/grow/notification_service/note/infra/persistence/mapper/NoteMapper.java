@@ -7,26 +7,29 @@ import org.springframework.stereotype.Component;
 @Component
 public class NoteMapper {
 
-    // 엔티티 -> 도메인
-    public Note toDomain(NoteJpaEntity entity) {
+    public Note toDomain(NoteJpaEntity e) {
         return new Note(
-                entity.getNoteId(),
-                entity.getSenderId(),
-                entity.getRecipientId(),
-                entity.getContent(),
-                entity.getCreatedAt(),
-                entity.getIsRead()
+            e.getNoteId(),
+            e.getSenderId(),
+            e.getRecipientId(),
+            e.getContent(),
+            e.getCreatedAt(),
+            e.getIsRead(),
+            e.getSenderDeleted(),
+            e.getRecipientDeleted()
         );
     }
 
-    // 도메인 -> 엔티티
-    public NoteJpaEntity toEntity(Note note) {
+    public NoteJpaEntity toEntity(Note n) {
         return NoteJpaEntity.builder()
-                .senderId(note.getSenderId())
-                .recipientId(note.getRecipientId())
-                .content(note.getContent())
-                .createdAt(note.getCreatedAt())
-                .isRead(note.getIsRead())
-                .build();
+            .noteId(n.getNoteId())
+            .senderId(n.getSenderId())
+            .recipientId(n.getRecipientId())
+            .content(n.getContent())
+            .createdAt(n.getCreatedAt())
+            .isRead(n.isRead())
+            .senderDeleted(n.isSenderDeleted())
+            .recipientDeleted(n.isRecipientDeleted())
+            .build();
     }
 }

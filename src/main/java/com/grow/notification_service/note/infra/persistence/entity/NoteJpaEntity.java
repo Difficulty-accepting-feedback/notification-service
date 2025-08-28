@@ -1,17 +1,21 @@
 package com.grow.notification_service.note.infra.persistence.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "note")
+@Table(name = "note",
+    indexes = {
+        @Index(name = "idx_note_sender_createdAt", columnList = "senderId, createdAt DESC"),
+        @Index(name = "idx_note_recipient_createdAt", columnList = "recipientId, createdAt DESC"),
+        @Index(name = "idx_note_isRead", columnList = "recipientId, isRead")
+    })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class NoteJpaEntity {
 
     @Id
@@ -19,32 +23,25 @@ public class NoteJpaEntity {
     @Column(name = "noteId", updatable = false, nullable = false)
     private Long noteId;
 
-    @Column(name = "senderId",  updatable = false, nullable = false)
+    @Column(name = "senderId", nullable = false)
     private Long senderId; // 발신자 멤버 ID
 
-    @Column(name = "recipientId",  updatable = false, nullable = false)
+    @Column(name = "recipientId", nullable = false)
     private Long recipientId; // 수신자 멤버 ID
 
-    @Column(name = "content",  updatable = false, nullable = false)
+    @Column(name = "content", nullable = false, length = 2000)
     private String content; // 쪽지 내용
 
-    @Column(name = "createdAt",  updatable = false, nullable = false)
+    @Column(name = "createdAt", nullable = false)
     private LocalDateTime createdAt; // 생성 시간
 
-    @Column(name = "isRead",  updatable = false, nullable = false)
+    @Column(name = "isRead", nullable = false)
     private Boolean isRead; // 조회 여부
 
-    @Builder
-    public NoteJpaEntity(Long senderId,
-                         Long recipientId,
-                         String content,
-                         LocalDateTime createdAt,
-                         Boolean isRead
-    ) {
-        this.senderId = senderId;
-        this.recipientId = recipientId;
-        this.content = content;
-        this.createdAt = createdAt;
-        this.isRead = isRead;
-    }
+    // 소프트 삭제 플래그
+    @Column(name = "senderDeleted", nullable = false)
+    private Boolean senderDeleted;
+
+    @Column(name = "recipientDeleted", nullable = false)
+    private Boolean recipientDeleted;
 }
