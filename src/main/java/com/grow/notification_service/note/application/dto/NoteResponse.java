@@ -8,6 +8,8 @@ public record NoteResponse(
 	Long noteId,
 	Long senderId,
 	Long recipientId,
+	String senderNickname,
+	String recipientNickname,
 	String content,
 	boolean isRead,
 	LocalDateTime createdAt
@@ -17,6 +19,8 @@ public record NoteResponse(
 			n.getNoteId(),
 			n.getSenderId(),
 			n.getRecipientId(),
+			n.getSenderNickname(),
+			n.getRecipientNickname(),
 			n.getContent(),
 			n.isRead(),
 			n.getCreatedAt()

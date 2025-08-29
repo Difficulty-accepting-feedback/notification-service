@@ -1,7 +1,9 @@
-package com.grow.notification_service.note.application.service;
+package com.grow.notification_service.note.application.service.impl;
 
 import com.grow.notification_service.note.application.dto.NotePageResponse;
 import com.grow.notification_service.note.application.dto.NoteResponse;
+import com.grow.notification_service.note.application.port.MemberPort;
+import com.grow.notification_service.note.application.service.NoteApplicationService;
 import com.grow.notification_service.note.presentation.dto.SendNoteRequest;
 import com.grow.notification_service.note.domain.model.Note;
 import com.grow.notification_service.note.domain.repository.NoteRepository;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class NoteApplicationServiceImpl implements NoteApplicationService {
 
 	private final NoteRepository noteRepository;
+	private final MemberPort memberPort;
 
 	/**
 	 * 새 쪽지 생성, 저장
@@ -26,10 +29,20 @@ public class NoteApplicationServiceImpl implements NoteApplicationService {
 	@Override
 	@Transactional
 	public NoteResponse send(Long senderId, SendNoteRequest req) {
-		Note note = Note.create(senderId, req.recipientId(), req.content());
-		Note saved = noteRepository.save(note);
+		// 닉네임 -> memberId 변환
+		MemberPort.ResolveResult resolved =
+			memberPort.resolveByNickname(req.recipientNickname());
 
-		log.info("[쪽지] 전송이 완료되었습니다. - senderId={}, recipientId={}, noteId={}",
+		// 전송 시점 닉네임 확보
+		String senderNick = memberPort.getMemberName(senderId);
+		String recipientNick = resolved.nickname();
+
+		// 저장 (스냅샷)
+		Note saved = noteRepository.save(
+			Note.create(senderId, resolved.memberId(), req.content(), senderNick, recipientNick)
+		);
+
+		log.info("[쪽지] 전송 완료 - senderId={}, recipientId={}, noteId={}",
 			senderId, saved.getRecipientId(), saved.getNoteId());
 
 		return NoteResponse.from(saved);
