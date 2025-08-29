@@ -29,6 +29,12 @@ public class NoteJpaEntity {
     @Column(name = "recipientId", nullable = false)
     private Long recipientId; // 수신자 멤버 ID
 
+    @Column(name = "senderNickname", nullable = false, length = 60)
+    private String senderNickname; // 전송 시점 발신자 닉네임
+
+    @Column(name = "recipientNickname", nullable = false, length = 60)
+    private String recipientNickname; // 전송 시점 수신자 닉네임
+
     @Column(name = "content", nullable = false, length = 2000)
     private String content; // 쪽지 내용
 
