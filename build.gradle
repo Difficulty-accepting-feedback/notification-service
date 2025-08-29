@@ -105,6 +105,9 @@ dependencies {
 	// resilience4j 추가
 	implementation 'io.github.resilience4j:resilience4j-all:2.3.0'
 	implementation 'io.github.resilience4j:resilience4j-spring-boot3'
+
+	// webClient
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 }
 
 tasks.named('test') {
