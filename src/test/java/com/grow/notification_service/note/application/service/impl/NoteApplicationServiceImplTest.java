@@ -3,6 +3,7 @@ package com.grow.notification_service.note.application.service.impl;
 import com.grow.notification_service.common.exception.DomainException;
 import com.grow.notification_service.note.application.dto.NotePageResponse;
 import com.grow.notification_service.note.application.dto.NoteResponse;
+import com.grow.notification_service.note.application.port.MemberPort;
 import com.grow.notification_service.note.domain.model.Note;
 import com.grow.notification_service.note.domain.repository.NoteRepository;
 import com.grow.notification_service.note.presentation.dto.SendNoteRequest;
@@ -34,27 +35,35 @@ class NoteApplicationServiceImplTest {
 	@Mock
 	private NoteRepository noteRepository;
 
+	@Mock
+	private MemberPort memberPort;
+
 	@InjectMocks
-	private com.grow.notification_service.note.application.service.NoteApplicationServiceImpl service;
+	private com.grow.notification_service.note.application.service.impl.NoteApplicationServiceImpl service;
 
 	@Nested
 	@DisplayName("쪽지 전송")
 	class SendTests {
 
 		@Test
-		@DisplayName("정상 전송 시 NoteResponse 반환")
+		@DisplayName("정상 전송 시 NoteResponse 반환 (닉네임 → memberId 해석)")
 		void send_success() {
 			Long senderId = 1L;
+			String recipientNickname = "상대닉";
 			Long recipientId = 2L;
-			SendNoteRequest req = new SendNoteRequest(recipientId, "안녕!");
+			SendNoteRequest req = new SendNoteRequest(recipientNickname, "안녕!");
+
+			// 멤버 포트: 닉네임 해석 + 발신자 닉네임 조회
+			given(memberPort.resolveByNickname(recipientNickname))
+				.willReturn(new MemberPort.ResolveResult(recipientId, recipientNickname));
+			given(memberPort.getMemberName(senderId)).willReturn("보낸이닉");
 
 			// 저장 후 반환될 도메인 객체(영속 상태 가정)
 			LocalDateTime fixed = LocalDateTime.of(2025, 1, 1, 12, 0, 0);
 			Note saved = new Note(
 				10L, senderId, recipientId, "안녕!",
-				fixed, false, false, false
+				fixed, false, false, false, "보낸이닉", "상대닉"
 			);
-
 			given(noteRepository.save(any(Note.class))).willReturn(saved);
 
 			NoteResponse response = service.send(senderId, req);
@@ -67,6 +76,8 @@ class NoteApplicationServiceImplTest {
 			assertFalse(response.isRead());
 			assertEquals(fixed, response.createdAt());
 
+			verify(memberPort).resolveByNickname(recipientNickname);
+			verify(memberPort).getMemberName(senderId);
 			verify(noteRepository).save(any(Note.class));
 		}
 
@@ -74,9 +85,14 @@ class NoteApplicationServiceImplTest {
 		@DisplayName("자기 자신에게는 전송 불가 (도메인 규칙 위반)")
 		void send_self_not_allowed() {
 			Long senderId = 1L;
-			SendNoteRequest req = new SendNoteRequest(1L, "나에게...");
+			String recipientNickname = "나";
+			SendNoteRequest req = new SendNoteRequest(recipientNickname, "나에게...");
 
-			// 도메인 팩토리 Note.create(...)에서 예외가 발생해야 함
+			// 닉네임 해석 결과가 본인
+			given(memberPort.resolveByNickname(recipientNickname))
+				.willReturn(new MemberPort.ResolveResult(senderId, recipientNickname));
+			given(memberPort.getMemberName(senderId)).willReturn("나");
+
 			assertThrows(DomainException.class, () -> service.send(senderId, req));
 		}
 	}
@@ -92,8 +108,8 @@ class NoteApplicationServiceImplTest {
 			int page = 0;
 			int size = 2;
 
-			Note n1 = new Note(11L, 1L, memberId, "첫 번째", LocalDateTime.now().minusMinutes(1), false, false, false);
-			Note n2 = new Note(12L, 3L, memberId, "두 번째", LocalDateTime.now().minusMinutes(2), true, false, false);
+			Note n1 = new Note(11L, 1L, memberId, "첫 번째", LocalDateTime.now().minusMinutes(1), false, false, false, "보낸이1", "나");
+			Note n2 = new Note(12L, 3L, memberId, "두 번째", LocalDateTime.now().minusMinutes(2), true, false, false, "보낸이3", "나");
 			Page<Note> notePage = new PageImpl<>(Arrays.asList(n1, n2), PageRequest.of(page, size), 2);
 
 			given(noteRepository.findReceived(eq(memberId), eq(PageRequest.of(page, size)))).willReturn(notePage);
@@ -115,7 +131,7 @@ class NoteApplicationServiceImplTest {
 			int page = 0;
 			int size = 1;
 
-			Note n1 = new Note(13L, memberId, 2L, "보낸 메시지", LocalDateTime.now(), false, false, false);
+			Note n1 = new Note(13L, memberId, 2L, "보낸 메시지", LocalDateTime.now(), false, false, false, "나", "상대닉");
 			Page<Note> notePage = new PageImpl<>(Collections.singletonList(n1), PageRequest.of(page, size), 1);
 
 			given(noteRepository.findSent(eq(memberId), eq(PageRequest.of(page, size)))).willReturn(notePage);

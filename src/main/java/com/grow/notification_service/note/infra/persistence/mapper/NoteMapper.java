@@ -16,7 +16,9 @@ public class NoteMapper {
             e.getCreatedAt(),
             e.getIsRead(),
             e.getSenderDeleted(),
-            e.getRecipientDeleted()
+            e.getRecipientDeleted(),
+            e.getSenderNickname(),
+            e.getRecipientNickname()
         );
     }
 
@@ -25,6 +27,8 @@ public class NoteMapper {
             .noteId(n.getNoteId())
             .senderId(n.getSenderId())
             .recipientId(n.getRecipientId())
+            .senderNickname(n.getSenderNickname())
+            .recipientNickname(n.getRecipientNickname())
             .content(n.getContent())
             .createdAt(n.getCreatedAt())
             .isRead(n.isRead())

@@ -16,31 +16,32 @@ public class Note {
     private boolean isRead;             // 조회 여부 (수신자 기준)
     private boolean senderDeleted;      // 발신자 소프트 삭제
     private boolean recipientDeleted;   // 수신자 소프트 삭제
+    private String senderNickname;
+    private String recipientNickname;
+
+
 
     // 새 쪽지 생성
-    public static Note create(Long senderId, Long recipientId, String content) {
-        if (senderId == null) {
-            throw NoteDomainException.senderIdRequired();
-        }
-        if (recipientId == null) {
-            throw NoteDomainException.recipientIdRequired();
-        }
-        if (senderId.equals(recipientId)) {
-            throw NoteDomainException.selfSendNotAllowed();
-        }
-        if (content == null || content.isBlank()) {
-            throw NoteDomainException.emptyContent();
-        }
+    public static Note create(Long senderId, Long recipientId, String content,
+        String senderNickname, String recipientNickname) {
+        if (senderId == null) throw NoteDomainException.senderIdRequired();
+        if (recipientId == null) throw NoteDomainException.recipientIdRequired();
+        if (senderId.equals(recipientId)) throw NoteDomainException.selfSendNotAllowed();
+        if (content == null || content.isBlank()) throw NoteDomainException.emptyContent();
+
         return new Note(
             null, senderId, recipientId, content,
             LocalDateTime.now(),
-            false, false, false
+            false, false, false,
+            senderNickname, recipientNickname
         );
     }
 
     public Note(Long noteId, Long senderId, Long recipientId, String content,
         LocalDateTime createdAt, Boolean isRead,
-        Boolean senderDeleted, Boolean recipientDeleted) {
+        Boolean senderDeleted, Boolean recipientDeleted,
+        String senderNickname, String recipientNickname) {
+
         this.noteId = noteId;
         this.senderId = senderId;
         this.recipientId = recipientId;
@@ -49,6 +50,8 @@ public class Note {
         this.isRead = isRead != null && isRead;
         this.senderDeleted = senderDeleted != null && senderDeleted;
         this.recipientDeleted = recipientDeleted != null && recipientDeleted;
+        this.senderNickname = senderNickname;
+        this.recipientNickname = recipientNickname;
     }
 
     // 비즈니스 로직
