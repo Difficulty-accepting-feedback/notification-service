@@ -17,7 +17,8 @@ public enum ErrorCode {
 	MEMBER_CHECK_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-0", "member.check.failed"),
 	NO_PERMISSION_TO_WRITE_ANSWER(HttpStatus.FORBIDDEN, "403-0", "no.permission.to.write.answer"),
 	QNA_NOT_FOUND(HttpStatus.NOT_FOUND, "404-1", "qna.not.found"),
-	INVALID_QNA_PARENT(HttpStatus.BAD_REQUEST, "400-3", "invalid.qna.parent"),;
+	INVALID_QNA_PARENT(HttpStatus.BAD_REQUEST, "400-3", "invalid.qna.parent"),
+	QNA_FORBIDDEN(HttpStatus.FORBIDDEN, "403-1", "qna.forbidden");
 	private final HttpStatus status;
 	private final String code;
 	private final String messageCode;
