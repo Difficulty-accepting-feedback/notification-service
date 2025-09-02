@@ -5,6 +5,7 @@ import lombok.Getter;
 import java.time.Clock;
 import java.time.LocalDateTime;
 
+import com.grow.notification_service.qna.domain.exception.QnaDomainException;
 import com.grow.notification_service.qna.domain.model.enums.QnaStatus;
 import com.grow.notification_service.qna.domain.model.enums.QnaType;
 
@@ -23,10 +24,10 @@ public class QnaPost {
 	public QnaPost(Long id, QnaType type, Long parentId, Long authorId,
 		String content, QnaStatus status, LocalDateTime createdAt, LocalDateTime updatedAt) {
 		if (type == QnaType.ANSWER && parentId == null) {
-			throw new IllegalArgumentException("ANSWER는 parentId가 필요합니다.");
+			throw QnaDomainException.AnswerParentIdRequired();
 		}
 		if (content == null || content.isBlank()) {
-			throw new IllegalArgumentException("내용은 비어 있을 수 없습니다.");
+			throw QnaDomainException.ContentCannotBeBlank();
 		}
 		this.id = id;
 		this.type = type;

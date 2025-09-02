@@ -32,7 +32,7 @@ public class QnaPostRepositoryImpl implements QnaPostRepository {
 	@Override
 	@Transactional
 	public Long save(QnaPost post) {
-		QnaPostJpaEntity saved = jpa.save(QnaPostMapper.toEntity(post)); // id null=insert, not null=merge
+		QnaPostJpaEntity saved = jpa.save(QnaPostMapper.toEntity(post));
 		return saved.getPostId();
 	}
 
