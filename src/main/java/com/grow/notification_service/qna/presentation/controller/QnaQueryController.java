@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import com.grow.notification_service.global.dto.RsData;
 import com.grow.notification_service.qna.application.dto.QnaPageResponse;
 import com.grow.notification_service.qna.application.dto.QnaThreadResponse;
-import com.grow.notification_service.qna.application.service.impl.QnaQueryService;
+import com.grow.notification_service.qna.application.service.QnaQueryService;
 import com.grow.notification_service.qna.domain.model.QnaPost;
 
 import io.swagger.v3.oas.annotations.Operation;

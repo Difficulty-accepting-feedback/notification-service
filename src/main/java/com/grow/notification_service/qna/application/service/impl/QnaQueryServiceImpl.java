@@ -12,6 +12,7 @@ import com.grow.notification_service.global.exception.QnaException;
 import com.grow.notification_service.qna.application.dto.QnaThreadNode;
 import com.grow.notification_service.qna.application.dto.QnaThreadResponse;
 import com.grow.notification_service.qna.application.port.AuthorityCheckerPort;
+import com.grow.notification_service.qna.application.service.QnaQueryService;
 import com.grow.notification_service.qna.domain.model.QnaPost;
 import com.grow.notification_service.qna.domain.model.enums.QnaType;
 import com.grow.notification_service.qna.domain.repository.QnaPostRepository;
@@ -23,27 +24,20 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class QnaQueryService {
+public class QnaQueryServiceImpl implements QnaQueryService {
 
 	private final QnaPostRepository repository;
 	private final AuthorityCheckerPort authorityCheckerPort; // 관리자 검증
 
-	private void assertAdmin(Long memberId, String actionTag) {
-		boolean admin = authorityCheckerPort.isAdmin(memberId);
-		log.debug("[Q&A][조회][검증][관리자] memberId={} isAdmin={} action={}", memberId, admin, actionTag);
-		if (!admin) {
-			log.warn("[Q&A][조회][거절][관리자필수] memberId={} action={}", memberId, actionTag);
-			throw new QnaException(ErrorCode.QNA_FORBIDDEN);
-		}
-	}
-
 	/** 관리자: 루트 QUESTION 기준 전체 스레드 조회 */
+	@Override
 	public QnaThreadResponse getThreadAsAdmin(Long rootQuestionId, Long viewerId) {
 		assertAdmin(viewerId, "getThreadAsAdmin");
 		return buildThreadChecked(rootQuestionId, /*ownerMustBe*/ null);
 	}
 
 	/** 개인: 본인 소유 루트 QUESTION의 전체 스레드 조회 */
+	@Override
 	public QnaThreadResponse getMyThread(Long rootQuestionId, Long viewerId) {
 		if (viewerId == null) {
 			log.warn("[Q&A][조회][스레드][거절] viewerId 누락");
@@ -53,6 +47,7 @@ public class QnaQueryService {
 	}
 
 	/** ★ 관리자: 루트 질문 목록 */
+	@Override
 	public Page<QnaPost> getRootQuestionsAsAdmin(Pageable pageable, Long viewerId) {
 		assertAdmin(viewerId, "getRootQuestionsAsAdmin");
 		log.info("[Q&A][조회][루트목록-관리자][시도] viewerId={}, page={}, size={}",
@@ -65,6 +60,7 @@ public class QnaQueryService {
 	}
 
 	/** ★ 개인: 내 루트 질문 목록 */
+	@Override
 	public Page<QnaPost> getMyRootQuestions(Pageable pageable, Long viewerId) {
 		if (viewerId == null) {
 			log.warn("[Q&A][조회][루트목록-개인][거절] viewerId 누락");
@@ -78,6 +74,21 @@ public class QnaQueryService {
 		log.info("[Q&A][조회][루트목록-개인][성공] viewerId={}, total={}", viewerId, page.getTotalElements());
 		return page;
 	}
+
+	// 헬퍼 메서드
+	/**
+	 * 관리자 검증
+	 * @param memberId 검증할 회원 ID
+	 */
+	private void assertAdmin(Long memberId, String actionTag) {
+		boolean admin = authorityCheckerPort.isAdmin(memberId);
+		log.debug("[Q&A][조회][검증][관리자] memberId={} isAdmin={} action={}", memberId, admin, actionTag);
+		if (!admin) {
+			log.warn("[Q&A][조회][거절][관리자필수] memberId={} action={}", memberId, actionTag);
+			throw new QnaException(ErrorCode.QNA_FORBIDDEN);
+		}
+	}
+
 
 	/**
 	 * 루트 질문을 기준으로 BFS 탐색하여 전체 트리를 구성
