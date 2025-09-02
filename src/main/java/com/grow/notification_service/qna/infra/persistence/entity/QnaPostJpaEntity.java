@@ -40,7 +40,7 @@ public class QnaPostJpaEntity {
 	private Long parentId;      // ANSWER일 경우 필수
 
 	@Column(nullable = false)
-	private Long authorId;
+	private Long memberId;
 
 	@Column(nullable = false, columnDefinition = "TEXT")
 	private String content;

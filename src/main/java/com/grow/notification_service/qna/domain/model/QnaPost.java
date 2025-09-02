@@ -12,16 +12,16 @@ import com.grow.notification_service.qna.domain.model.enums.QnaType;
 @Getter
 public class QnaPost {
 
-	private final Long id;
-	private final QnaType type;
-	private final Long parentId;
-	private final Long authorId;
-	private final String content;
-	private final QnaStatus status;
-	private final LocalDateTime createdAt;
-	private final LocalDateTime updatedAt;
+	private final Long id; // 질문/답변 ID
+	private final QnaType type; // 질문 or 답변
+	private final Long parentId; // 부모 질문 ID (답변인 경우에만 필요)
+	private final Long memberId; // 작성자 ID
+	private final String content; // 내용
+	private final QnaStatus status; // 상태 (활성/삭제)
+	private final LocalDateTime createdAt; // 생성 시간
+	private final LocalDateTime updatedAt; // 수정 시간
 
-	public QnaPost(Long id, QnaType type, Long parentId, Long authorId,
+	public QnaPost(Long id, QnaType type, Long parentId, Long memberId,
 		String content, QnaStatus status, LocalDateTime createdAt, LocalDateTime updatedAt) {
 		if (type == QnaType.ANSWER && parentId == null) {
 			throw QnaDomainException.AnswerParentIdRequired();
@@ -32,7 +32,7 @@ public class QnaPost {
 		this.id = id;
 		this.type = type;
 		this.parentId = parentId;
-		this.authorId = authorId;
+		this.memberId = memberId;
 		this.content = content;
 		this.status = status;
 		this.createdAt = createdAt;
@@ -69,7 +69,7 @@ public class QnaPost {
 	 * @return 삭제된 QnaPost
 	 */
 	public QnaPost delete() {
-		return new QnaPost(id, type, parentId, authorId, content,
+		return new QnaPost(id, type, parentId, memberId, content,
 			QnaStatus.DELETED, createdAt, updatedAt);
 	}
 }

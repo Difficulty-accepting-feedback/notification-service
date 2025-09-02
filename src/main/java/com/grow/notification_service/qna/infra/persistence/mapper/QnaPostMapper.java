@@ -15,7 +15,7 @@ public class QnaPostMapper {
 			e.getPostId(),
 			e.getType(),
 			e.getParentId(),
-			e.getAuthorId(),
+			e.getMemberId(),
 			e.getContent(),
 			e.getStatus(),
 			e.getCreatedAt(),
@@ -32,7 +32,7 @@ public class QnaPostMapper {
 		return QnaPostJpaEntity.builder()
 			.type(d.getType())
 			.parentId(d.getParentId())
-			.authorId(d.getAuthorId())
+			.memberId(d.getMemberId())
 			.content(d.getContent())
 			.status(d.getStatus())
 			.createdAt(d.getCreatedAt())
