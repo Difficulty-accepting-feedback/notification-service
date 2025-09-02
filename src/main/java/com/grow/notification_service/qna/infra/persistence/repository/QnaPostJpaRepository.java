@@ -13,5 +13,7 @@ public interface QnaPostJpaRepository extends JpaRepository<QnaPostJpaEntity, Lo
 
 	Page<QnaPostJpaEntity> findByTypeOrderByCreatedAtDesc(QnaType type, Pageable pageable);
 
+	List<QnaPostJpaEntity> findByParentIdOrderByCreatedAtAsc(Long parentId);
+
 	boolean existsByPostId(Long postId);
 }

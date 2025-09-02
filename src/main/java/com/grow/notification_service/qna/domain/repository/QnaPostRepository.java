@@ -13,5 +13,7 @@ public interface QnaPostRepository {
 	Long save(QnaPost post);
 	Optional<QnaPost> findById(Long id);
 	Page<QnaPost> findQuestions(Pageable pageable);
+	Page<QnaPost> findByType(QnaType type, Pageable pageable);
+	List<QnaPost> findChildren(Long parentId);
 	boolean existsById(Long id);
 }
