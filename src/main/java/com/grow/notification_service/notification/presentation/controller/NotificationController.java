@@ -4,7 +4,7 @@ import com.grow.notification_service.notification.application.service.Notificati
 import com.grow.notification_service.notification.application.sse.SseSendService;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
-import com.grow.notification_service.notification.presentation.dto.rsdata.RsData;
+import com.grow.notification_service.global.dto.RsData;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;

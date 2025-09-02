@@ -4,7 +4,7 @@ import com.grow.notification_service.note.application.dto.NotePageResponse;
 import com.grow.notification_service.note.application.dto.NoteResponse;
 import com.grow.notification_service.note.presentation.dto.SendNoteRequest;
 import com.grow.notification_service.note.application.service.NoteApplicationService;
-import com.grow.notification_service.notification.presentation.dto.rsdata.RsData;
+import com.grow.notification_service.global.dto.RsData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
