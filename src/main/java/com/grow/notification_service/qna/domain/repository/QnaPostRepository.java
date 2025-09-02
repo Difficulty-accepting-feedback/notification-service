@@ -15,5 +15,8 @@ public interface QnaPostRepository {
 	Page<QnaPost> findQuestions(Pageable pageable);
 	Page<QnaPost> findByType(QnaType type, Pageable pageable);
 	List<QnaPost> findChildren(Long parentId);
+	Page<QnaPost> findMyQuestions(Long memberId, Pageable pageable);
+	Page<QnaPost> findRootQuestions(Pageable pageable);
+	Page<QnaPost> findMyRootQuestions(Long memberId, Pageable pageable);
 	boolean existsById(Long id);
 }
