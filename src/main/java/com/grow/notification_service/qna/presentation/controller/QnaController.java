@@ -16,19 +16,21 @@ import com.grow.notification_service.qna.application.service.QnaCommandService;
 import com.grow.notification_service.qna.presentation.dto.CreateAnswerRequest;
 import com.grow.notification_service.qna.presentation.dto.CreateQuestionRequest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/qna")
-// @Tag(name = "QNA", description = "QNA(질문/답변) API")
+@Tag(name = "QNA", description = "QNA(질문/답변) API")
 @Validated
 public class QnaController {
 
 	private final QnaCommandService commandService;
 
-	// @Operation(summary = "질문 작성(루트/추가질문)", description = "parentId가 null이면 루트 질문, 값이 있으면 해당 ANSWER 밑 추가 질문입니다.")
+	@Operation(summary = "질문 작성(루트/추가질문)", description = "parentId가 null이면 루트 질문, 값이 있으면 해당 ANSWER 밑 추가 질문입니다.")
 	@PostMapping("/questions")
 	public ResponseEntity<RsData<Void>> createQuestion(
 		@RequestHeader("X-Authorization-Id") Long memberId,
@@ -40,7 +42,7 @@ public class QnaController {
 			.body(new RsData<>("201", "질문 작성 성공", null));
 	}
 
-	// @Operation(summary = "답변 작성(관리자만)", description = "parent인 questionId는 반드시 QUESTION이어야 합니다.")
+	@Operation(summary = "답변 작성(관리자만)", description = "parent인 questionId는 반드시 QUESTION이어야 합니다.")
 	@PostMapping("/questions/{questionId}/answers")
 	public ResponseEntity<RsData<Void>> createAnswer(
 		@RequestHeader("X-Authorization-Id") Long memberId,

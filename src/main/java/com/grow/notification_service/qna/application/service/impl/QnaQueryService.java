@@ -1,4 +1,3 @@
-// com.grow.notification_service.qna.application.service.impl.QnaQueryService
 package com.grow.notification_service.qna.application.service.impl;
 
 import java.util.*;

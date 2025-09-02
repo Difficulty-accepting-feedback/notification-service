@@ -1,4 +1,3 @@
-// com.grow.notification_service.qna.presentation.controller.QnaThreadController
 package com.grow.notification_service.qna.presentation.controller;
 
 import org.springframework.data.domain.Page;
@@ -9,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 import com.grow.notification_service.global.dto.RsData;
 import com.grow.notification_service.qna.application.dto.QnaPageResponse;
-import com.grow.notification_service.qna.application.dto.QnaThreadPageResponse;
 import com.grow.notification_service.qna.application.dto.QnaThreadResponse;
 import com.grow.notification_service.qna.application.service.impl.QnaQueryService;
 import com.grow.notification_service.qna.domain.model.QnaPost;
@@ -28,7 +26,6 @@ public class QnaQueryController {
 	private final QnaQueryService queryService;
 
 	// 관리자용
-
 	@Operation(summary = "루트 질문 목록(관리자)", description = "QUESTION & parentId=null 만 최신순 페이징")
 	@GetMapping("/questions")
 	public ResponseEntity<RsData<QnaPageResponse>> getRootQuestionsAsAdmin(
