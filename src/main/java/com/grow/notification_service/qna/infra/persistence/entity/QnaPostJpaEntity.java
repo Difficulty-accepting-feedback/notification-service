@@ -12,6 +12,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -24,34 +25,47 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @Builder
-@Table(name = "qna_post")
+@Table(
+	name = "qna_post",
+	indexes = {
+		// parentId + createdAt: 트리 조회/정렬 최적화
+		@Index(name = "idx_qna_parent_created", columnList = "parent_id, created_at"),
+		// type + parentId: 질문/답변 필터 시
+		@Index(name = "idx_qna_type_parent", columnList = "type, parent_id"),
+		// memberId + createdAt: 내 질문 목록
+		@Index(name = "idx_qna_member_created", columnList = "member_id, created_at")
+	}
+)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class QnaPostJpaEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "post_id")
 	private Long postId;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private QnaType type;       // QUESTION/ANSWER
+	@Column(name = "type", nullable = false)
+	private QnaType type; // QUESTION/ANSWER
 
-	private Long parentId;      // ANSWER일 경우 필수
+	@Column(name = "parent_id")
+	private Long parentId;
 
-	@Column(nullable = false)
+	@Column(name = "member_id", nullable = false)
 	private Long memberId;
 
-	@Column(nullable = false, columnDefinition = "TEXT")
+	@Column(name = "content", nullable = false, columnDefinition = "TEXT")
 	private String content;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private QnaStatus status;   // ACTIVE/DELETED
+	@Column(name = "status", nullable = false)
+	private QnaStatus status; // ACTIVE/DELETED
 
-	@Column(nullable = false)
+	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
+	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
 
 	@PrePersist
@@ -59,6 +73,9 @@ public class QnaPostJpaEntity {
 		if (createdAt == null) createdAt = LocalDateTime.now();
 		if (status == null) status = QnaStatus.ACTIVE;
 	}
+
 	@PreUpdate
-	void preUpdate() { updatedAt = LocalDateTime.now(); }
+	void preUpdate() {
+		updatedAt = LocalDateTime.now();
+	}
 }
