@@ -5,6 +5,7 @@ import lombok.Getter;
 import java.time.Clock;
 import java.time.LocalDateTime;
 
+import com.grow.notification_service.common.exception.DomainException;
 import com.grow.notification_service.qna.domain.exception.QnaDomainException;
 import com.grow.notification_service.qna.domain.model.enums.QnaStatus;
 import com.grow.notification_service.qna.domain.model.enums.QnaType;
@@ -64,15 +65,6 @@ public class QnaPost {
 			QnaStatus.ACTIVE, LocalDateTime.now(clock), null);
 	}
 
-	/**
-	 * 삭제 처리
-	 * @return 삭제된 QnaPost
-	 */
-	public QnaPost delete() {
-		return new QnaPost(id, type, parentId, memberId, content,
-			QnaStatus.DELETED, createdAt, updatedAt);
-	}
-
 	/** 추가 질문 생성: ANSWER 아래에만 허용 (parent는 ANSWER의 id) */
 	public static QnaPost newFollowUpQuestion(Long memberId, Long answerId, String content, Clock clock) {
 		return new QnaPost(null, QnaType.QUESTION, answerId, memberId, content,
@@ -82,5 +74,15 @@ public class QnaPost {
 	/** parentId만 바꿔서 새 인스턴스를 리턴 */
 	public QnaPost withParentId(Long parentId) {
 		return new QnaPost(id, type, parentId, memberId, content, status, createdAt, updatedAt);
+	}
+
+	/** 체인형 QnA 규칙: 질문이 추가되면 스레드는 ACTIVE */
+	public static QnaStatus threadStatusOnQuestionAdded() {
+		return QnaStatus.ACTIVE;
+	}
+
+	/** 체인형 QnA 규칙: 답변이 추가되면 스레드는 COMPLETED */
+	public static QnaStatus threadStatusOnAnswerAdded() {
+		return QnaStatus.COMPLETED;
 	}
 }
