@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.grow.notification_service.qna.domain.model.QnaPost;
+import com.grow.notification_service.qna.domain.model.enums.QnaStatus;
 import com.grow.notification_service.qna.domain.model.enums.QnaType;
 import com.grow.notification_service.qna.domain.repository.QnaPostRepository;
 import com.grow.notification_service.qna.infra.persistence.entity.QnaPostJpaEntity;
@@ -137,6 +138,19 @@ public class QnaPostRepositoryImpl implements QnaPostRepository {
 			);
 		List<QnaPost> content = page.getContent().stream().map(QnaPostMapper::toDomain).toList();
 		return new PageImpl<>(content, pageable, page.getTotalElements());
+	}
+
+	/**
+	 * 시작 ID로부터 루트 질문의 상태 갱신
+	 * @param startId 시작 QnaPost ID (질문 또는 답변)
+	 * @param status 새 상태
+	 * @return 갱신된 행 수 (0 또는 1)
+	 */
+	@Override
+	@Transactional
+	public int updateRootStatusFrom(Long startId, QnaStatus status) {
+		Long rootId = jpa.findRootIdFromAny(startId);
+		return jpa.updateStatusById(rootId, status.name());
 	}
 
 	/**
