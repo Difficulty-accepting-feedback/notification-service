@@ -88,28 +88,26 @@ public class QnaQueryServiceImpl implements QnaQueryService {
 			throw new QnaException(ErrorCode.QNA_FORBIDDEN);
 		}
 	}
-
-
 	/**
-	 * 루트 질문을 기준으로 BFS 탐색하여 전체 트리를 구성
-	 *
+	 * 스레드 조회 및 검증
 	 * @param rootQuestionId 루트 질문 ID
-	 * @param ownerMustBe    소유자 검증 ID (관리자 호출 시 null)
-	 * @return QnaThreadResponse (트리 구조로 변환된 응답)
+	 * @param ownerMustBe 소유자 ID (null이면 관리자 조회로 간주)
+	 * @return 스레드 응답
 	 */
 	private QnaThreadResponse buildThreadChecked(Long rootQuestionId, Long ownerMustBe) {
 		log.info("[Q&A][조회][스레드][시도] rootQuestionId={}, ownerMustBe={}", rootQuestionId, ownerMustBe);
 
-		// 1. 루트 질문 조회
-		QnaPost root = repository.findById(rootQuestionId)
-			.orElseThrow(() -> {
-				log.warn("[Q&A][조회][스레드][거절] rootQuestionId={} 미존재", rootQuestionId);
-				return new QnaException(ErrorCode.QNA_NOT_FOUND);
-			});
+		// 1. CTE로 루트+후손 전체 로드
+		List<QnaPost> flat = repository.findTreeFlat(rootQuestionId);
+		if (flat.isEmpty()) {
+			log.warn("[Q&A][조회][스레드][거절] rootQuestionId={} 미존재", rootQuestionId);
+			throw new QnaException(ErrorCode.QNA_NOT_FOUND);
+		}
 
-		// 2. 루트는 QUESTION 타입만 가능
-		if (root.getType() != QnaType.QUESTION) {
-			log.warn("[Q&A][조회][스레드][거절] rootQuestionId={} 타입={} (QUESTION만 루트 허용)", rootQuestionId, root.getType());
+		// 2. 루트 검증 (첫 원소가 루트, QUESTION)
+		QnaPost root = flat.get(0);
+		if (!root.getId().equals(rootQuestionId) || root.getType() != QnaType.QUESTION) {
+			log.warn("[Q&A][조회][스레드][거절] root 검증 실패 id={}, type={}", root.getId(), root.getType());
 			throw new QnaException(ErrorCode.INVALID_QNA_PARENT);
 		}
 
@@ -119,43 +117,26 @@ public class QnaQueryServiceImpl implements QnaQueryService {
 			throw new QnaException(ErrorCode.QNA_FORBIDDEN);
 		}
 
-		// 4. BFS 탐색으로 모든 자식 수집
-		Map<Long, QnaPost> collected = new LinkedHashMap<>();
-		Deque<QnaPost> q = new ArrayDeque<>();
-		q.add(root);
-		collected.put(root.getId(), root);
-
-		while (!q.isEmpty()) {
-			QnaPost cur = q.poll();
-			List<QnaPost> children = repository.findChildren(cur.getId());
-			children.sort(Comparator.comparing(QnaPost::getCreatedAt)); // 시간순 정렬
-			for (QnaPost ch : children) {
-				if (!collected.containsKey(ch.getId())) {
-					collected.put(ch.getId(), ch);
-					q.add(ch);
-				}
-			}
-		}
-
-		// 5. 수집된 QnaPost를 QnaThreadNode로 변환
-		Map<Long, QnaThreadNode> nodeMap = new HashMap<>();
-		for (QnaPost p : collected.values()) {
+		// 4. 링크 조립
+		Map<Long, QnaThreadNode> nodeMap = new LinkedHashMap<Long, QnaThreadNode>(flat.size());
+		for (QnaPost p : flat) {
 			nodeMap.put(p.getId(), new QnaThreadNode(p));
 		}
 
-		// 6. 부모-자식 관계 연결
-		QnaThreadNode rootNode = nodeMap.get(root.getId());
-		for (QnaPost p : collected.values()) {
+		QnaThreadNode rootNode = nodeMap.get(rootQuestionId);
+		for (QnaPost p : flat) {
 			if (p.getParentId() == null) continue;
 			QnaThreadNode parent = nodeMap.get(p.getParentId());
 			QnaThreadNode child = nodeMap.get(p.getId());
-			if (parent != null) parent.addChild(child);
+			if (parent != null) {
+				parent.addChild(child);
+			}
 		}
 
-		// 7. 재귀
+		// 5. 재귀
 		rootNode.sortRecursively();
 
-		log.info("[Q&A][조회][스레드][성공] rootQuestionId={}, totalNodes={}", rootQuestionId, collected.size());
+		log.info("[Q&A][조회][스레드][성공] rootQuestionId={}, totalNodes={}", rootQuestionId, flat.size());
 		return new QnaThreadResponse(rootNode);
 	}
 }
