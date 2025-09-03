@@ -28,10 +28,14 @@ import lombok.NoArgsConstructor;
 @Table(
 	name = "qna_post",
 	indexes = {
+		// parentId 단일: CTE 상향 탐색 최적화 (JOIN up u ON p.post_id = u.parent_id)
+		@Index(name = "idx_qna_parent", columnList = "parent_id"),
 		// parentId + createdAt: 트리 조회/정렬 최적화
 		@Index(name = "idx_qna_parent_created", columnList = "parent_id, created_at"),
 		// type + parentId: 질문/답변 필터 시
 		@Index(name = "idx_qna_type_parent", columnList = "type, parent_id"),
+		// type + parentId + createdAt: 복합 정렬/필터
+		@Index(name = "idx_qna_type_parent_created", columnList = "type, parent_id, created_at"),
 		// memberId + createdAt: 내 질문 목록
 		@Index(name = "idx_qna_member_created", columnList = "member_id, created_at")
 	}
