@@ -99,6 +99,18 @@ public class QnaPostRepositoryImpl implements QnaPostRepository {
 	}
 
 	/**
+	 * 루트 질문 트리 조회 (플랫 리스트)
+	 * 루트 질문과 그에 속한 모든 답변들을 플랫 리스트 형태로 조회합니다.
+	 * @param rootId 루트 질문 ID
+	 * @return 루트 질문과 그에 속한 모든 답변들의 플랫 리스트
+	 */
+	@Override
+	public List<QnaPost> findTreeFlat(Long rootId) {
+		List<QnaPostJpaEntity> rows = jpa.findTreeByRootId(rootId);
+		return rows.stream().map(QnaPostMapper::toDomain).toList();
+	}
+
+	/**
 	 * 루트 질문 목록 조회 (페이징)
 	 * @param pageable 페이징 정보
 	 * @return 루트 질문 목록 페이지
