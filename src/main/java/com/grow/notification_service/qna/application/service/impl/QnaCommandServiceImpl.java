@@ -10,6 +10,7 @@ import com.grow.notification_service.global.exception.QnaException;
 import com.grow.notification_service.qna.application.port.AuthorityCheckerPort;
 import com.grow.notification_service.qna.application.service.QnaCommandService;
 import com.grow.notification_service.qna.domain.model.QnaPost;
+import com.grow.notification_service.qna.domain.model.enums.QnaStatus;
 import com.grow.notification_service.qna.domain.model.enums.QnaType;
 import com.grow.notification_service.qna.domain.repository.QnaPostRepository;
 
@@ -25,6 +26,7 @@ public class QnaCommandServiceImpl implements QnaCommandService {
 	private final AuthorityCheckerPort authorityCheckerPort;
 	private final Clock clock;
 
+	//TODO 외부 API 호출 분리하기
 	/** 질문 작성: parentId=null -> 루트, parentId=answerId -> 추가 질문 */
 	@Override
 	@Transactional
@@ -58,6 +60,14 @@ public class QnaCommandServiceImpl implements QnaCommandService {
 		QnaPost followUp = QnaPost.newFollowUpQuestion(memberId, parent.getId(), content, clock);
 		Long id = repository.save(followUp);
 		log.info("[Q&A][질문][성공] memberId={}, postId={}, type={}, parentId={}", memberId, id, QnaType.QUESTION, parent.getId());
+
+		// ★ 체인 규칙에 따라 루트 상태를 ACTIVE로 토글 (CTE : startId = parent ANSWER)
+		QnaStatus next = QnaPost.threadStatusOnQuestionAdded(); // ACTIVE
+		log.debug("[Q&A][상태][토글][질문추가] startId={}, nextStatus={}", parent.getId(), next);
+		int updated = repository.updateRootStatusFrom(parent.getId(), next);
+		log.info("[Q&A][상태][토글][질문추가][{}] startId={}, nextStatus={}, rows={}",
+			updated > 0 ? "성공" : "스킵", parent.getId(), next, updated);
+
 		return id;
 	}
 
@@ -94,6 +104,14 @@ public class QnaCommandServiceImpl implements QnaCommandService {
 		QnaPost answer = QnaPost.newAnswer(memberId, parent.getId(), content, clock);
 		Long id = repository.save(answer);
 		log.info("[Q&A][답변][성공] memberId={}, postId={}, type={}, parentId={}", memberId, id, QnaType.ANSWER, parent.getId());
+
+		// ★ 체인 규칙에 따라 루트 상태를 COMPLETED로 토글 (CTE : startId = questionId)
+		QnaStatus next = QnaPost.threadStatusOnAnswerAdded(); // COMPLETED
+		log.debug("[Q&A][상태][토글][답변추가] startId={}, nextStatus={}", questionId, next);
+		int updated = repository.updateRootStatusFrom(questionId, next);
+		log.info("[Q&A][상태][토글][답변추가][{}] startId={}, nextStatus={}, rows={}",
+			updated > 0 ? "성공" : "스킵", questionId, next, updated);
+
 		return id;
 	}
 }

@@ -29,6 +29,7 @@ public class QnaQueryServiceImpl implements QnaQueryService {
 	private final QnaPostRepository repository;
 	private final AuthorityCheckerPort authorityCheckerPort; // 관리자 검증
 
+	//TODO 외부 API 호출 분리하기
 	/** 관리자: 루트 QUESTION 기준 전체 스레드 조회 */
 	@Override
 	public QnaThreadResponse getThreadAsAdmin(Long rootQuestionId, Long viewerId) {
