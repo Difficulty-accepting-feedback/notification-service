@@ -1,4 +1,4 @@
-package com.grow.notification_service.notification.presentation.dto.rsdata;
+package com.grow.notification_service.global.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

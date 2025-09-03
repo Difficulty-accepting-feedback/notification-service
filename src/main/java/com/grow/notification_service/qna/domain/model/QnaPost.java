@@ -46,7 +46,7 @@ public class QnaPost {
 	 * @param clock 시간
 	 * @return 생성된 질문
 	 */
-	public static QnaPost newQuestion(Long authorId, String content, Clock clock) {
+	public static QnaPost newRootQuestion(Long authorId, String content, Clock clock) {
 		return new QnaPost(null, QnaType.QUESTION, null, authorId, content,
 			QnaStatus.ACTIVE, LocalDateTime.now(clock), null);
 	}
@@ -71,5 +71,16 @@ public class QnaPost {
 	public QnaPost delete() {
 		return new QnaPost(id, type, parentId, memberId, content,
 			QnaStatus.DELETED, createdAt, updatedAt);
+	}
+
+	/** 추가 질문 생성: ANSWER 아래에만 허용 (parent는 ANSWER의 id) */
+	public static QnaPost newFollowUpQuestion(Long memberId, Long answerId, String content, Clock clock) {
+		return new QnaPost(null, QnaType.QUESTION, answerId, memberId, content,
+			QnaStatus.ACTIVE, LocalDateTime.now(clock), null);
+	}
+
+	/** parentId만 바꿔서 새 인스턴스를 리턴 */
+	public QnaPost withParentId(Long parentId) {
+		return new QnaPost(id, type, parentId, memberId, content, status, createdAt, updatedAt);
 	}
 }

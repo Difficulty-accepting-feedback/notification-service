@@ -4,7 +4,7 @@ import com.grow.notification_service.notification.application.dto.NotificationLi
 import com.grow.notification_service.notification.application.dto.PageResponse;
 import com.grow.notification_service.notification.application.dto.UnreadCountResponse;
 import com.grow.notification_service.notification.application.service.NotificationQueryService;
-import com.grow.notification_service.notification.presentation.dto.rsdata.RsData;
+import com.grow.notification_service.global.dto.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
