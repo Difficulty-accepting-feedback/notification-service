@@ -4,17 +4,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.grow.notification_service.notice.domain.model.Notice;
-import com.grow.notification_service.notice.presentation.dto.NoticeCreateRequest;
-import com.grow.notification_service.notice.presentation.dto.NoticeEditRequest;
-import com.grow.notification_service.notice.presentation.dto.NoticePinRequest;
 
 public interface NoticeApplicationService {
 
-	Notice create(Long memberId, NoticeCreateRequest req);
+	Notice create(Long memberId, String title, String content, boolean pinned);
 
-	Notice edit(Long memberId, Long id, NoticeEditRequest req);
+	Notice edit(Long memberId, Long id, String title, String content);
 
-	Notice setPinned(Long memberId, Long id, NoticePinRequest req);
+	Notice setPinned(Long memberId, Long id, boolean pinned);
 
 	void delete(Long memberId, Long id);
 

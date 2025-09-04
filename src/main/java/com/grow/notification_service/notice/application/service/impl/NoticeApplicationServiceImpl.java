@@ -12,9 +12,6 @@ import com.grow.notification_service.global.exception.NoticeException;
 import com.grow.notification_service.notice.application.service.NoticeApplicationService;
 import com.grow.notification_service.notice.domain.model.Notice;
 import com.grow.notification_service.notice.domain.repository.NoticeRepository;
-import com.grow.notification_service.notice.presentation.dto.NoticeCreateRequest;
-import com.grow.notification_service.notice.presentation.dto.NoticeEditRequest;
-import com.grow.notification_service.notice.presentation.dto.NoticePinRequest;
 import com.grow.notification_service.qna.application.port.AuthorityCheckerPort;
 
 import lombok.RequiredArgsConstructor;
@@ -25,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class NoticeApplicationServiceImpl implements NoticeApplicationService {
-//TODO: 외부 API 조회 분리 필요
+	//TODO: 외부 API 조회 분리 필요
 	private final NoticeRepository noticeRepository;
 	private final AuthorityCheckerPort authorityCheckerPort;
 	private final Clock clock;
@@ -33,16 +30,18 @@ public class NoticeApplicationServiceImpl implements NoticeApplicationService {
 	/**
 	 * 공지사항 생성
 	 * @param memberId 요청자 회원 ID
-	 * @param req 공지사항 생성 요청
+	 * @param title 공지 제목
+	 * @param content 공지 내용
+	 * @param pinned 고정 여부
 	 * @return 생성된 공지사항
 	 */
 	@Override
 	@Transactional
-	public Notice create(Long memberId, NoticeCreateRequest req) {
-		log.info("[공지][생성][시작] memberId={} title={}", memberId, req.title());
+	public Notice create(Long memberId, String title, String content, boolean pinned) {
+		log.info("[공지][생성][시작] memberId={} title={}", memberId, title);
 		assertAdmin(memberId);
 
-		Notice notice = Notice.create(req.title(), req.content(), req.pinned(), clock);
+		Notice notice = Notice.create(title, content, pinned, clock);
 		Notice saved = noticeRepository.save(notice);
 
 		log.info("[공지][생성][완료] noticeId={} title={}", saved.getNoticeId(), saved.getTitle());
@@ -53,18 +52,19 @@ public class NoticeApplicationServiceImpl implements NoticeApplicationService {
 	 * 공지사항 수정
 	 * @param memberId 요청자 회원 ID
 	 * @param id 공지사항 ID
-	 * @param req 공지사항 수정 요청
+	 * @param title 수정할 제목
+	 * @param content 수정할 내용
 	 * @return 수정된 공지사항
 	 */
 	@Override
 	@Transactional
-	public Notice edit(Long memberId, Long id, NoticeEditRequest req) {
+	public Notice edit(Long memberId, Long id, String title, String content) {
 		log.info("[공지][수정][시작] memberId={} noticeId={}", memberId, id);
 		assertAdmin(memberId);
 
 		Notice n = noticeRepository.findById(id)
 			.orElseThrow(() -> new NoticeException(ErrorCode.NOTICE_NOT_FOUND));
-		n.edit(req.title(), req.content());
+		n.edit(title, content);
 
 		Notice updated = noticeRepository.save(n);
 		log.info("[공지][수정][완료] noticeId={} title={}", updated.getNoticeId(), updated.getTitle());
@@ -75,22 +75,22 @@ public class NoticeApplicationServiceImpl implements NoticeApplicationService {
 	 * 공지사항 고정/해제
 	 * @param memberId 요청자 회원 ID
 	 * @param id 공지사항 ID
-	 * @param req 공지사항 고정/해제 요청
+	 * @param pinned 고정 여부
 	 * @return 수정된 공지사항
 	 */
 	@Override
 	@Transactional
-	public Notice setPinned(Long memberId, Long id, NoticePinRequest req) {
-		log.info("[공지][고정][시작] memberId={} noticeId={} pinned={}", memberId, id, req.pinned());
+	public Notice setPinned(Long memberId, Long id, boolean pinned) {
+		log.info("[공지][고정][시작] memberId={} noticeId={} pinned={}", memberId, id, pinned);
 		assertAdmin(memberId);
 
 		Notice n = noticeRepository.findById(id)
 			.orElseThrow(() -> new NoticeException(ErrorCode.NOTICE_NOT_FOUND));
-		n.setPinned(req.pinned());
+		n.setPinned(pinned);
 
-		Notice pinned = noticeRepository.save(n);
-		log.info("[공지][고정][완료] noticeId={} pinned={}", pinned.getNoticeId(), pinned.isPinned());
-		return pinned;
+		Notice pinnedNotice = noticeRepository.save(n);
+		log.info("[공지][고정][완료] noticeId={} pinned={}", pinnedNotice.getNoticeId(), pinnedNotice.isPinned());
+		return pinnedNotice;
 	}
 
 	/**
