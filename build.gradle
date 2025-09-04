@@ -20,16 +20,22 @@ jacoco {
 }
 
 def jacocoExcludes = [
+		'**/repository/**',
+		'**/controller/**',
 		'**/exception/**',
 		'**/dto/**',
 		'**/thirdparty/**',
 		'**/entity/**',
-		'**/Q*.class',
+		'**/Q[A-Z]*.class',
 		'**/config/**',
 		'**/common/**',
 		'**/constants/**',
 		'**/listener/**',
-		'**/swagger/**'
+		'**/swagger/**',
+		'**/*Application*',
+		'**/client/**',
+		'**/analysis/**'
+
 ]
 
 jacocoTestCoverageVerification {
@@ -45,9 +51,9 @@ jacocoTestCoverageVerification {
 			enabled = true
 			element = 'CLASS'
 			limit {
-//				counter = 'LINE' // 라인 커버리지 기준
+				counter = 'LINE' // 라인 커버리지 기준
 				value = 'COVEREDRATIO'
-//				minimum = 0.70 // 70% 이상이어야 통과
+				minimum = 0.70 // 70% 이상이어야 통과
 			}
 		}
 	}
@@ -126,4 +132,8 @@ tasks.named('asciidoctor') {
 
 tasks.withType(JavaCompile) {
 	options.compilerArgs += ['-parameters']
+}
+
+test {
+	finalizedBy 'jacocoTestReport'
 }
