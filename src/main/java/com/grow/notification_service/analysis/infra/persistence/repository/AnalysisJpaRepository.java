@@ -1,7 +1,8 @@
-package com.grow.ai_coaching_service.analysis.infra.persistence.repository;
+package com.grow.notification_service.analysis.infra.persistence.repository;
 
-import com.grow.ai_coaching_service.analysis.infra.persistence.entity.AnalysisJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.grow.notification_service.analysis.infra.persistence.entity.AnalysisJpaEntity;
 
 public interface AnalysisJpaRepository extends JpaRepository<AnalysisJpaEntity,Long> {
 }

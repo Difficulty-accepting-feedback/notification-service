@@ -1,8 +1,10 @@
-package com.grow.ai_coaching_service.analysis.infra.persistence.mapper;
+package com.grow.notification_service.analysis.infra.persistence.mapper;
 
-import com.grow.ai_coaching_service.analysis.domain.model.Analysis;
-import com.grow.ai_coaching_service.analysis.infra.persistence.entity.AnalysisJpaEntity;
+
 import org.springframework.stereotype.Component;
+
+import com.grow.notification_service.analysis.domain.model.Analysis;
+import com.grow.notification_service.analysis.infra.persistence.entity.AnalysisJpaEntity;
 
 @Component
 public class AnalysisMapper {

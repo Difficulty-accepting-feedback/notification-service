@@ -1,4 +1,4 @@
-package com.grow.ai_coaching_service.analysis.infra.persistence.entity;
+package com.grow.notification_service.analysis.infra.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
