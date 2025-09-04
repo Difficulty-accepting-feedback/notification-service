@@ -18,7 +18,11 @@ public enum ErrorCode {
 	NO_PERMISSION_TO_WRITE_ANSWER(HttpStatus.FORBIDDEN, "403-0", "no.permission.to.write.answer"),
 	QNA_NOT_FOUND(HttpStatus.NOT_FOUND, "404-1", "qna.not.found"),
 	INVALID_QNA_PARENT(HttpStatus.BAD_REQUEST, "400-3", "invalid.qna.parent"),
-	QNA_FORBIDDEN(HttpStatus.FORBIDDEN, "403-1", "qna.forbidden");
+	QNA_FORBIDDEN(HttpStatus.FORBIDDEN, "403-1", "qna.forbidden"),
+
+	// 공지사항
+	NO_PERMISSION_TO_WRITE_NOTICE(HttpStatus.FORBIDDEN, "403-2", "no.permission.to.write.notice"),
+	NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "404-2", "notice.not.found"),;
 	private final HttpStatus status;
 	private final String code;
 	private final String messageCode;
