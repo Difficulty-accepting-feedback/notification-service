@@ -64,13 +64,18 @@ public class NoticeApplicationServiceImpl implements NoticeApplicationService {
 
 		Notice n = noticeRepository.findById(id)
 			.orElseThrow(() -> new NoticeException(ErrorCode.NOTICE_NOT_FOUND));
-		n.edit(title, content);
 
+		boolean changed = n.edit(title, content, clock);
+		if (!changed) {
+			log.info("[공지][수정][스킵] 변경 사항 없음 - noticeId={}", id);
+			return n;
+		}
+
+		// 변경이 있을 때만 저장
 		Notice updated = noticeRepository.save(n);
 		log.info("[공지][수정][완료] noticeId={} title={}", updated.getNoticeId(), updated.getTitle());
 		return updated;
 	}
-
 	/**
 	 * 공지사항 고정/해제
 	 * @param memberId 요청자 회원 ID
@@ -86,8 +91,14 @@ public class NoticeApplicationServiceImpl implements NoticeApplicationService {
 
 		Notice n = noticeRepository.findById(id)
 			.orElseThrow(() -> new NoticeException(ErrorCode.NOTICE_NOT_FOUND));
-		n.setPinned(pinned);
 
+		boolean changed = n.setPinned(pinned, clock);
+		if (!changed) {
+			log.info("[공지][고정][스킵] 동일 상태 - noticeId={} pinned={}", id, pinned);
+			return n;
+		}
+
+		// 변경이 있을 때만 저장
 		Notice pinnedNotice = noticeRepository.save(n);
 		log.info("[공지][고정][완료] noticeId={} pinned={}", pinnedNotice.getNoticeId(), pinnedNotice.isPinned());
 		return pinnedNotice;

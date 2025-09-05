@@ -11,7 +11,8 @@ public class NoticeMapper {
 			e.getTitle(),
 			e.getContent(),
 			e.getIsPinned(),
-			e.getCreatedAt()
+			e.getCreatedAt(),
+			e.getUpdatedAt()
 		);
 	}
 
@@ -22,6 +23,7 @@ public class NoticeMapper {
 			.content(n.getContent())
 			.isPinned(n.isPinned())
 			.createdAt(n.getCreatedAt())
+			.updatedAt(n.getUpdatedAt())
 			.build();
 	}
 }
