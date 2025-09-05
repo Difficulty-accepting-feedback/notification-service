@@ -1,4 +1,4 @@
-package com.grow.ai_coaching_service.analysis.domain.model;
+package com.grow.notification_service.analysis.domain.model;
 
 import lombok.Getter;
 

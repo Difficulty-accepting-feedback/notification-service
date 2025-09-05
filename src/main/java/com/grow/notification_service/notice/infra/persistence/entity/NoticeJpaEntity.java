@@ -1,10 +1,14 @@
 package com.grow.notification_service.notice.infra.persistence.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,7 +28,7 @@ public class NoticeJpaEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long noticeId;
 
-	@Column(nullable = false)
+	@Column(nullable = false, length = 200)
 	private String title;
 
 	@Column(nullable = false, columnDefinition = "TEXT")
@@ -32,4 +36,24 @@ public class NoticeJpaEntity {
 
 	@Column(nullable = false)
 	private Boolean isPinned;
+
+	@Column(nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	private LocalDateTime updatedAt;
+
+	/** 엔티티 최초 persist 시점에 createdAt/updatedAt 설정 */
+	@PrePersist
+	protected void onCreate() {
+		LocalDateTime now = LocalDateTime.now();
+		this.createdAt = now;
+		this.updatedAt = now;
+	}
+
+	/** 엔티티 update 시점에 updatedAt 갱신 */
+	@PreUpdate
+	protected void onUpdate() {
+		this.updatedAt = LocalDateTime.now();
+	}
 }

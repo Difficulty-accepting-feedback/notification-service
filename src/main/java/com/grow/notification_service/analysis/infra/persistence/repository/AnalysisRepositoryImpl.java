@@ -1,11 +1,13 @@
-package com.grow.ai_coaching_service.analysis.infra.persistence.repository;
+package com.grow.notification_service.analysis.infra.persistence.repository;
 
-import com.grow.ai_coaching_service.analysis.domain.model.Analysis;
-import com.grow.ai_coaching_service.analysis.domain.repository.AnalysisRepository;
-import com.grow.ai_coaching_service.analysis.infra.persistence.entity.AnalysisJpaEntity;
-import com.grow.ai_coaching_service.analysis.infra.persistence.mapper.AnalysisMapper;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+
+import com.grow.notification_service.analysis.domain.model.Analysis;
+import com.grow.notification_service.analysis.domain.repository.AnalysisRepository;
+import com.grow.notification_service.analysis.infra.persistence.entity.AnalysisJpaEntity;
+import com.grow.notification_service.analysis.infra.persistence.mapper.AnalysisMapper;
 
 @Repository
 @RequiredArgsConstructor
