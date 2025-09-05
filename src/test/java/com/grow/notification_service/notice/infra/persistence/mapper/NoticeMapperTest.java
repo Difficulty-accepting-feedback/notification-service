@@ -44,6 +44,7 @@ class NoticeMapperTest {
 			"테스트 제목",
 			"테스트 내용",
 			false,
+			now,
 			now
 		);
 
@@ -68,6 +69,7 @@ class NoticeMapperTest {
 			"제목",
 			"내용",
 			true,
+			now,
 			now
 		);
 

@@ -36,7 +36,7 @@ class NoticeTest {
 		Notice notice = Notice.create("제목", "내용", false, fixedClock);
 
 		// when
-		notice.edit("수정된 제목", "수정된 내용");
+		notice.edit("수정된 제목", "수정된 내용", fixedClock);
 
 		// then
 		assertThat(notice.getTitle()).isEqualTo("수정된 제목");
@@ -50,7 +50,7 @@ class NoticeTest {
 		Notice notice = Notice.create("제목", "내용", false, fixedClock);
 
 		// when
-		notice.setPinned(true);
+		notice.setPinned(true, fixedClock);
 
 		// then
 		assertThat(notice.isPinned()).isTrue();

@@ -46,8 +46,9 @@ class NoticeApplicationServiceImplTest {
 		fixedNow = LocalDateTime.ofInstant(fixedInstant, zone);
 	}
 
-	private Notice notice(Long id, String title, String content, boolean pinned, LocalDateTime createdAt) {
-		return new Notice(id, title, content, pinned, createdAt);
+	private Notice notice(Long id, String title, String content, boolean pinned,
+		LocalDateTime createdAt, LocalDateTime updatedAt) {
+		return new Notice(id, title, content, pinned, createdAt, updatedAt);
 	}
 
 	// --- create ---
@@ -60,7 +61,7 @@ class NoticeApplicationServiceImplTest {
 		// save 시점에 ID가 부여된 도메인을 반환(레포지토리 구현을 가정한 스텁)
 		when(noticeRepository.save(any())).thenAnswer(inv -> {
 			Notice n = inv.getArgument(0, Notice.class);
-			return notice(10L, n.getTitle(), n.getContent(), n.isPinned(), n.getCreatedAt());
+			return notice(10L, n.getTitle(), n.getContent(), n.isPinned(), n.getCreatedAt(), n.getUpdatedAt());
 		});
 
 		Notice saved = service.create(adminId, "제목", "내용", true);
@@ -70,6 +71,7 @@ class NoticeApplicationServiceImplTest {
 		assertThat(saved.getContent()).isEqualTo("내용");
 		assertThat(saved.isPinned()).isTrue();
 		assertThat(saved.getCreatedAt()).isEqualTo(fixedNow);
+		assertThat(saved.getUpdatedAt()).isEqualTo(fixedNow); // create 시 createdAt == updatedAt
 
 		verify(authorityCheckerPort).isAdmin(adminId);
 		verify(noticeRepository).save(any(Notice.class));
@@ -86,14 +88,16 @@ class NoticeApplicationServiceImplTest {
 
 	// --- edit ---
 	@Test
-	@DisplayName("관리자는 공지의 제목/내용을 수정할 수 있다")
+	@DisplayName("관리자는 공지의 제목/내용을 수정할 수 있다 (변경 시 updatedAt 갱신)")
 	void edit_success() {
 		Long adminId = 1L;
 		when(authorityCheckerPort.isAdmin(adminId)).thenReturn(true);
 
-		Notice origin = notice(11L, "old", "oldC", false, fixedNow);
+		LocalDateTime past = fixedNow.minusHours(2);
+		Notice origin = notice(11L, "old", "oldC", false, past, past);
 		when(noticeRepository.findById(11L)).thenReturn(Optional.of(origin));
-		// save는 전달된 도메인을 그대로 반환해도 무방
+
+		// save는 전달된 도메인을 그대로 반환
 		when(noticeRepository.save(any(Notice.class))).thenAnswer(inv -> inv.getArgument(0));
 
 		Notice updated = service.edit(adminId, 11L, "new", "newC");
@@ -102,6 +106,8 @@ class NoticeApplicationServiceImplTest {
 		assertThat(updated.getTitle()).isEqualTo("new");
 		assertThat(updated.getContent()).isEqualTo("newC");
 		assertThat(updated.isPinned()).isFalse();
+		assertThat(updated.getCreatedAt()).isEqualTo(past);
+		assertThat(updated.getUpdatedAt()).isEqualTo(fixedNow); // 갱신됨
 
 		verify(noticeRepository).findById(11L);
 		verify(noticeRepository).save(any(Notice.class));
@@ -127,17 +133,20 @@ class NoticeApplicationServiceImplTest {
 
 	// --- setPinned ---
 	@Test
-	@DisplayName("관리자는 공지 고정/해제를 설정할 수 있다")
+	@DisplayName("관리자는 공지 고정/해제를 설정할 수 있다 (변경 시 updatedAt 갱신)")
 	void setPinned_success() {
 		when(authorityCheckerPort.isAdmin(1L)).thenReturn(true);
 
-		Notice n = notice(20L, "t", "c", false, fixedNow);
+		LocalDateTime past = fixedNow.minusDays(1);
+		Notice n = notice(20L, "t", "c", false, past, past);
 		when(noticeRepository.findById(20L)).thenReturn(Optional.of(n));
 		when(noticeRepository.save(any(Notice.class))).thenAnswer(inv -> inv.getArgument(0));
 
 		Notice pinned = service.setPinned(1L, 20L, true);
 
 		assertThat(pinned.isPinned()).isTrue();
+		assertThat(pinned.getUpdatedAt()).isEqualTo(fixedNow);
+
 		verify(noticeRepository).findById(20L);
 		verify(noticeRepository).save(any(Notice.class));
 	}
@@ -185,7 +194,7 @@ class NoticeApplicationServiceImplTest {
 	@Test
 	@DisplayName("공지 단건 조회")
 	void get_success() {
-		Notice n = notice(55L, "t", "c", false, fixedNow);
+		Notice n = notice(55L, "t", "c", false, fixedNow, fixedNow);
 		when(noticeRepository.findById(55L)).thenReturn(Optional.of(n));
 
 		Notice found = service.get(55L);
@@ -207,8 +216,8 @@ class NoticeApplicationServiceImplTest {
 	@Test
 	@DisplayName("공지 페이지 조회 - 고정 우선, 최신순(레포지토리 계약을 그대로 반환)")
 	void getPage_success() {
-		Notice pinned = notice(1L, "p", "pc", true, fixedNow.plusMinutes(1));
-		Notice normal = notice(2L, "n", "nc", false, fixedNow);
+		Notice pinned = notice(1L, "p", "pc", true, fixedNow.plusMinutes(1), fixedNow.plusMinutes(1));
+		Notice normal = notice(2L, "n", "nc", false, fixedNow, fixedNow);
 
 		PageRequest pr = PageRequest.of(0, 10);
 		when(noticeRepository.findPinnedFirstOrderByCreatedAtDesc(pr))
@@ -225,16 +234,17 @@ class NoticeApplicationServiceImplTest {
 	@DisplayName("경계/예외 케이스 보조 검증")
 	class EdgeCases {
 		@Test
-		@DisplayName("create에서 Clock 기반 생성시각이 정확히 주입된다")
+		@DisplayName("create에서 Clock 기반 생성/수정 시각이 정확히 주입된다")
 		void create_usesClockNow() {
 			when(authorityCheckerPort.isAdmin(99L)).thenReturn(true);
 			when(noticeRepository.save(any())).thenAnswer(inv -> {
 				Notice n = inv.getArgument(0, Notice.class);
-				return notice(100L, n.getTitle(), n.getContent(), n.isPinned(), n.getCreatedAt());
+				return notice(100L, n.getTitle(), n.getContent(), n.isPinned(), n.getCreatedAt(), n.getUpdatedAt());
 			});
 
 			Notice saved = service.create(99L, "t", "c", false);
 			assertThat(saved.getCreatedAt()).isEqualTo(fixedNow);
+			assertThat(saved.getUpdatedAt()).isEqualTo(fixedNow);
 		}
 	}
 }
