@@ -6,6 +6,8 @@ import com.grow.notification_service.notification.presentation.dto.NotificationR
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -25,7 +27,14 @@ public class NotificationRequestedConsumer {
  	 */
 	@KafkaListener(
 		topics = "member.notification.requested",
-		groupId = "notification-service"
+		groupId = "notification-service",
+		concurrency = "3"
+	)
+	@RetryableTopic(
+		attempts = "5",
+		backoff = @Backoff(delay = 1000, multiplier = 2),
+		dltTopicSuffix = ".dlt",
+		autoCreateTopics = "true"
 	)
 	public void onMessage(String payload) {
 		// 1. 페이로드를 NotificationRequestDto로 역직렬화
@@ -38,6 +47,7 @@ public class NotificationRequestedConsumer {
 				dto.getMemberId(), dto.getNotificationType());
 		} catch (Exception e) {
 			log.error("[KAFKA][RECV][ERROR] payload={}", payload, e);
+			throw e;
 		}
 	}
 }
