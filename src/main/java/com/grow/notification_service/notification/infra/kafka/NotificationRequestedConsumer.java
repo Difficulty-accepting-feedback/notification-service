@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 public class NotificationRequestedConsumer {
 
 	private final NotificationService notificationService;
-	private final JsonUtils json; // 공용 ObjectMapper 쓰는 util(Bean)
 
 	/**
 	 * Kafka "member.notification.requested" 토픽에서 메시지를 수신합니다.
@@ -33,7 +32,7 @@ public class NotificationRequestedConsumer {
 		// 2. NotificationService를 통해 알림 처리
 		// 3. 처리 결과를 로그에 기록
 		try {
-			NotificationRequestDto dto = json.fromJson(payload, NotificationRequestDto.class);
+			NotificationRequestDto dto = JsonUtils.fromJson(payload, NotificationRequestDto.class);
 			notificationService.processNotification(dto);
 			log.info("[KAFKA][RECV] member.notification.requested -> memberId={}, type={}",
 				dto.getMemberId(), dto.getNotificationType());
