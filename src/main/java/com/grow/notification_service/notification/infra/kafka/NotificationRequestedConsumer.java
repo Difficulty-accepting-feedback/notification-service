@@ -35,7 +35,7 @@ public class NotificationRequestedConsumer {
 		try {
 			NotificationRequestDto dto = json.fromJson(payload, NotificationRequestDto.class);
 			notificationService.processNotification(dto);
-			log.info("[KAFKA][RECV] notification.requested -> memberId={}, type={}",
+			log.info("[KAFKA][RECV] member.notification.requested -> memberId={}, type={}",
 				dto.getMemberId(), dto.getNotificationType());
 		} catch (Exception e) {
 			log.error("[KAFKA][RECV][ERROR] payload={}", payload, e);
