@@ -1,32 +1,38 @@
 package com.grow.notification_service.notification.infra.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grow.notification_service.global.config.JsonUtils;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.grow.notification_service.notification.application.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-
-import static org.mockito.Mockito.*;
 
 import java.util.Map;
+
+import static org.mockito.Mockito.*;
 
 class NotificationRequestedConsumerTest {
 
 	private NotificationService notificationService; // mock
-	private JsonUtils json;                          // real
 	private NotificationRequestedConsumer consumer;  // SUT
 
 	@BeforeEach
 	void setUp() {
 		notificationService = mock(NotificationService.class);
-		consumer = new NotificationRequestedConsumer(notificationService, json);
+		// 컨슈머는 NotificationService만 주입받음 (@RequiredArgsConstructor)
+		consumer = new NotificationRequestedConsumer(notificationService);
 	}
 
 	@Test
-	void onMessage_success_withObjectMapper() throws Exception {
-		ObjectMapper mapper = new ObjectMapper();
+	@DisplayName("정상 JSON이면 역직렬화 후 도메인 서비스 호출")
+	void onMessage_success() throws Exception {
+		// JsonUtils가 내부에서 JavaTimeModule을 등록해 쓰므로,
+		// 테스트에서도 같은 포맷으로 JSON을 만들어 주는 게 안전해요.
+		ObjectMapper mapper = new ObjectMapper()
+			.registerModule(new JavaTimeModule())
+			.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
 		String payload = mapper.writeValueAsString(
 			Map.of(
 				"memberId", 14,
@@ -44,15 +50,12 @@ class NotificationRequestedConsumerTest {
 	}
 
 	@Test
-	@DisplayName("깨진 JSON이면 컨슈머가 예외를 잡고 Service는 호출하지 않음")
+	@DisplayName("깨진 JSON이면 예외를 잡고 서비스는 호출하지 않음")
 	void onMessage_badJson() {
-		// given: 명백히 잘못된 JSON
 		String badPayload = "{ not-a-json ";
 
-		// when: 컨슈머가 try-catch로 예외를 먹고 로그만 남겨야 함
 		consumer.onMessage(badPayload);
 
-		// then: 서비스 호출 안 됨
 		verify(notificationService, never()).processNotification(any());
 	}
 }
