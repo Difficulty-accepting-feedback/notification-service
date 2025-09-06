@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class NotificationRequestedConsumerTest {
@@ -52,10 +53,11 @@ class NotificationRequestedConsumerTest {
 	@Test
 	@DisplayName("깨진 JSON이면 예외를 잡고 서비스는 호출하지 않음")
 	void onMessage_badJson() {
-		String badPayload = "{ not-a-json ";
+		// given
+		String payload = "{ not-a-json";
 
-		consumer.onMessage(badPayload);
-
+		// when & then
+		assertThrows(RuntimeException.class, () -> consumer.onMessage(payload));
 		verify(notificationService, never()).processNotification(any());
 	}
 }
