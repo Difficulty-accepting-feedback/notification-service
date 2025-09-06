@@ -1,11 +1,13 @@
 
 package com.grow.notification_service.notification.presentation.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
 
 import java.time.LocalDateTime;
 
@@ -21,6 +23,8 @@ import java.time.LocalDateTime;
  */
 @Getter
 @Builder
+@Jacksonized
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class NotificationRequestDto {
 
     /**
