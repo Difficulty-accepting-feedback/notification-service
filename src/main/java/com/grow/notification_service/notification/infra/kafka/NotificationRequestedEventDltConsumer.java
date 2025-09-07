@@ -28,7 +28,7 @@ public class NotificationRequestedEventDltConsumer {
 	private String slackWebhookUrl;
 
 	@KafkaListener(
-		topics = "member.notification.requested.dlt",
+		topics = {"member.notification.requested.dlt", "point.notification.requested.dlt"},
 		groupId = "notification-dlt-service"
 	)
 	public void consumeNotificationRequestedDlt(String message) {
