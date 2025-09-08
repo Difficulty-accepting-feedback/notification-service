@@ -1,4 +1,4 @@
-package com.grow.notification_service.notification.application.event;
+package com.grow.notification_service.notification.application.event.dto;
 
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
 import lombok.Getter;

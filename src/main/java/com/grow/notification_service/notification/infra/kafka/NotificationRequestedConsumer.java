@@ -1,6 +1,6 @@
 package com.grow.notification_service.notification.infra.kafka;
 
-import com.grow.notification_service.global.config.JsonUtils;
+import com.grow.notification_service.global.util.JsonUtils;
 import com.grow.notification_service.notification.application.service.NotificationService;
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
 import lombok.RequiredArgsConstructor;
@@ -41,10 +41,8 @@ public class NotificationRequestedConsumer {
 		// 2. NotificationService를 통해 알림 처리
 		// 3. 처리 결과를 로그에 기록
 		try {
-			NotificationRequestDto dto = JsonUtils.fromJson(payload, NotificationRequestDto.class);
+			NotificationRequestDto dto = JsonUtils.fromJsonString(payload, NotificationRequestDto.class);
 			notificationService.processNotification(dto);
-			log.info("[KAFKA][RECV] member.notification.requested -> memberId={}, type={}",
-				dto.getMemberId(), dto.getNotificationType());
 		} catch (Exception e) {
 			log.error("[KAFKA][RECV][ERROR] payload={}", payload, e);
 			throw e;
