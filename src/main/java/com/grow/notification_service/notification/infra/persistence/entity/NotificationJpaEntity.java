@@ -31,6 +31,7 @@ public class NotificationJpaEntity {
     private Boolean isRead; // 조회 여부
 
     @Column(name = "notificationType", nullable = false, updatable = false)
+    @Enumerated(EnumType.STRING)
     private NotificationType notificationType; // 알림 타입
 
     @Column(name = "isSent", nullable = false)

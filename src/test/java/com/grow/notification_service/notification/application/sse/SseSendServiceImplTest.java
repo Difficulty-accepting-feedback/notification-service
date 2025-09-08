@@ -1,5 +1,6 @@
 package com.grow.notification_service.notification.application.sse;
 
+import com.grow.notification_service.notification.application.event.dto.NotificationSavedEvent;
 import com.grow.notification_service.notification.application.exception.SseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,7 +14,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -183,7 +183,7 @@ class SseSendServiceImplTest {
                 com.grow.notification_service.notification.infra.persistence.entity.NotificationType.MATCHING_SUCCESS)
             .content("hi")
             .build();
-        var event = new com.grow.notification_service.notification.application.event.NotificationSavedEvent(this, dto);
+        var event = new NotificationSavedEvent(this, dto);
 
         // emitter가 없어도 sendNotification 내부에서 예외를 던질 테니, 호출 자체만 검증
         doThrow(new SseException(SSE_NOT_CONNECTED)).when(spySvc)
