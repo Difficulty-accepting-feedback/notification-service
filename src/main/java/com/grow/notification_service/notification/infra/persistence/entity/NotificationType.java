@@ -14,7 +14,11 @@ public enum NotificationType {
     MESSAGE("[쪽지]"),
     INQUIRY_ANSWER("[문의 답변]"),
     REVIEW("[리뷰]"),
-    PAYMENT("[결제]");
+    PAYMENT("[결제]"),
+
+    GROUP_JOIN_REQUEST("[그룹 참여 요청]"),
+    GROUP_JOIN_APPROVAL("[그룹 참여 승인]"),
+    GROUP_JOIN_REJECTION("[그룹 참여 거절]"),;
 
     private final String title;
 
