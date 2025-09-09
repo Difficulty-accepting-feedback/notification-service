@@ -1,19 +1,13 @@
 package com.grow.notification_service.notification.infra.kafka;
 
-import com.slack.api.Slack;
-import com.slack.api.webhook.WebhookPayloads;
+import com.grow.notification_service.global.slack.SlackErrorSendService;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-
-import static com.slack.api.model.block.Blocks.*;
-import static com.slack.api.model.block.composition.BlockCompositions.*;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.stereotype.Component;
 
 /**
  * 알림 요청 이벤트가 재시도 끝에 실패(DLT 도착)했을 때 처리하는 Consumer
@@ -21,43 +15,57 @@ import static com.slack.api.model.block.composition.BlockCompositions.*;
  * - 슬랙 웹훅 알림 전송
  */
 @Slf4j
-@Service
+@Component
+@RequiredArgsConstructor
 public class NotificationRequestedEventDltConsumer {
 
-	@Value("${slack.webhook.url}")
-	private String slackWebhookUrl;
+	private final SlackErrorSendService slackErrorSendService;
 
 	@KafkaListener(
-		topics = {"member.notification.requested.dlt", "point.notification.requested.dlt"},
-		groupId = "notification-dlt-service"
+		topics = "member.notification.requested.dlt",
+		groupId = "notification-dlt-member-service"
 	)
-	public void consumeNotificationRequestedDlt(String message) {
-		log.info("[NOTIFICATION DLT] 알림 요청 실패 이벤트 수신: {}", message == null ? "" : message.trim());
+	public void consumeMemberDlt(String message) {
+		log.info("[NOTIFICATION DLT][MEMBER] 수신: {}", message == null ? "" : message.trim());
 
-		// TODO 로그 시스템에 전송 or 모니터링 카운트 증가 + 슬랙 URL 받아서 테스트 해봐야함
+		slackErrorSendService.sendError(
+			"회원 알림 - 전송 실패",
+			"카테고리: [MEMBER -> NOTIFICATION]\n상세: 회원 관련 알림 전송에 실패하였습니다.\n영향: 사용자에게 알림이 수신되지 않아 안내 지연 가능",
+			message
+		);
 
-		// 슬랙으로 알림 전송
-		Slack slack = Slack.getInstance();
+		log.info("[NOTIFICATION DLT][MEMBER] 처리 완료");
+	}
 
-		// 현재 시간(KST) 동적 생성
-		LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
-		String currentTime = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+	@KafkaListener(
+		topics = "point.notification.requested.dlt",
+		groupId = "notification-dlt-point-service"
+	)
+	public void consumePointDlt(String message) {
+		log.info("[NOTIFICATION DLT][POINT] 수신: {}", message == null ? "" : message.trim());
 
-		// 에러 메시지 구성
-		String errorDetails =
-			"카테고리: [NOTIFICATION]\n" +
-				"상세: 알림 처리에 실패하였습니다.\n" +
-				"발생 시간: " + currentTime + "\n" +
-				"영향: 사용자에게 알림 전송이 누락되어 안내 지연 가능";
+		slackErrorSendService.sendError(
+			"포인트 알림 - 전송 실패",
+			"카테고리: [POINT -> NOTIFICATION]\n상세: 포인트 관련 알림 전송에 실패하였습니다.\n영향: 사용자에게 알림이 수신되지 않아 안내 지연 가능",
+			message
+		);
 
-		try {
-			slack.send(slackWebhookUrl, WebhookPayloads.payload(p -> p.blocks(asBlocks(
-				header(h -> h.text(plainText("⚠️ 오류 알림: 알림 요청 이벤트 수신 실패", true))),
-				section(s -> s.text(plainText(errorDetails)))
-			))));
-		} catch (IOException e) {
-			log.warn("[NOTIFICATION DLT] 알림 요청 실패 이벤트 수신 실패: {}", e.getMessage());
-			throw new RuntimeException("slack 에 오류 메시지 전송 실패", e);
-		}
+		log.info("[NOTIFICATION DLT][POINT] 처리 완료");
+	}
+
+	@KafkaListener(
+		topics = "payment.notification.requested.dlt",
+		groupId = "notification-dlt-payment-service"
+	)
+	public void consumePaymentDlt(String message) {
+		log.info("[NOTIFICATION DLT][PAYMENT] 수신: {}", message == null ? "" : message.trim());
+
+		slackErrorSendService.sendError(
+			"결제 알림 - 전송 실패",
+			"카테고리: [PAYMENT -> NOTIFICATION]\n상세: 결제 관련 알림 전송에 실패하였습니다.\n영향: 사용자에게 알림이 수신되지 않아 안내 지연 가능",
+			message
+		);
+
+		log.info("[NOTIFICATION DLT][PAYMENT] 처리 완료");
 	}
 }

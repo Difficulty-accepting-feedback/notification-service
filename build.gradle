@@ -34,7 +34,11 @@ def jacocoExcludes = [
 		'**/swagger/**',
 		'**/*Application*',
 		'**/client/**',
-		'**/analysis/**'
+		'**/analysis/**',
+		'**/event/**',
+		'**/kafka/**',
+		'**/slack/**',
+		'**/util/**'
 
 ]
 
