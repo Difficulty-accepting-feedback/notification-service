@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.grow.notification_service.global.exception.ErrorCode;
 import com.grow.notification_service.global.exception.QnaException;
+import com.grow.notification_service.qna.application.event.QnaNotificationProducer;
 import com.grow.notification_service.qna.application.port.AuthorityCheckerPort;
 import com.grow.notification_service.qna.application.service.QnaCommandService;
 import com.grow.notification_service.qna.domain.model.QnaPost;
@@ -25,6 +26,7 @@ public class QnaCommandServiceImpl implements QnaCommandService {
 	private final QnaPostRepository repository;
 	private final AuthorityCheckerPort authorityCheckerPort;
 	private final Clock clock;
+	private final QnaNotificationProducer qnaNotificationProducer;
 
 	//TODO 외부 API 호출 분리하기
 	/** 질문 작성: parentId=null -> 루트, parentId=answerId -> 추가 질문 */
@@ -111,6 +113,17 @@ public class QnaCommandServiceImpl implements QnaCommandService {
 		int updated = repository.updateRootStatusFrom(questionId, next);
 		log.info("[Q&A][상태][토글][답변추가][{}] startId={}, nextStatus={}, rows={}",
 			updated > 0 ? "성공" : "스킵", questionId, next, updated);
+
+		// 질문 작성자에게 알림 이벤트 발행
+		Long recipientMemberId = parent.getMemberId();
+		try {
+			qnaNotificationProducer.answerAdded(recipientMemberId, id);
+			log.info("[Q&A][알림][발행] recipient={}, answerId={}", recipientMemberId, id);
+		} catch (Exception e) {
+			// 알림 실패가 트랜잭션을 깨지 않도록 로깅만 (추후 Outbox 고려)
+			log.warn("[Q&A][알림][발행실패] recipient={}, answerId={}, err={}",
+				recipientMemberId, id, e.toString(), e);
+		}
 
 		return id;
 	}
