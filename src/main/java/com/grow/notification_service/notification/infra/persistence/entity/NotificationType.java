@@ -16,6 +16,7 @@ public enum NotificationType {
     REVIEW("[리뷰]"),
     PAYMENT("[결제]"),
     QNA("[Q&A]"),
+    NOTE("[쪽지]"),
 
     GROUP_JOIN_REQUEST("[그룹 참여 요청]"),
     GROUP_JOIN_APPROVAL("[그룹 참여 승인]"),
