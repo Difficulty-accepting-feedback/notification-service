@@ -12,4 +12,12 @@ public class KafkaTopicConfig {
 			.replicas(3)
 			.build();
 	}
+
+	@Bean
+	public NewTopic noteNotificationRequested() {
+		return TopicBuilder.name("note.notification.requested")
+			.partitions(3)
+			.replicas(3)
+			.build();
+	}
 }

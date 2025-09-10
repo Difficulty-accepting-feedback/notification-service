@@ -82,4 +82,18 @@ public class NotificationRequestedEventDltConsumer {
 		);
 		log.info("[NOTIFICATION DLT][QNA] 처리 완료");
 	}
+
+	@KafkaListener(
+		topics = "note.notification.requested.dlt",
+		groupId = "notification-dlt-note-service"
+	)
+	public void consumeNoteDlt(String message) { // ★ 추가
+		log.info("[NOTIFICATION DLT][NOTE] 수신: {}", message == null ? "" : message.trim());
+		slackErrorSendService.sendError(
+			"쪽지 알림 - 전송 실패",
+			"카테고리: [NOTE -> NOTIFICATION]\n상세: 쪽지 관련 알림 전송에 실패하였습니다.\n영향: 사용자에게 알림이 수신되지 않아 안내 지연 가능",
+			message
+		);
+		log.info("[NOTIFICATION DLT][NOTE] 처리 완료");
+	}
 }

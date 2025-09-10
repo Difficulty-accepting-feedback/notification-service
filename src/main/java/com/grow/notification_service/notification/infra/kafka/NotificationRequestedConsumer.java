@@ -26,7 +26,13 @@ public class NotificationRequestedConsumer {
 	 * @param payload Kafka 메시지의 JSON 페이로드
  	 */
 	@KafkaListener(
-		topics = {"member.notification.requested", "point.notification.requested", "payment.notification.requested", "qna.notification.requested"},
+		topics = {
+			"member.notification.requested",
+			"point.notification.requested",
+			"payment.notification.requested",
+			"qna.notification.requested",
+			"note.notification.requested"
+		},
 		groupId = "notification-service",
 		concurrency = "3"
 	)
