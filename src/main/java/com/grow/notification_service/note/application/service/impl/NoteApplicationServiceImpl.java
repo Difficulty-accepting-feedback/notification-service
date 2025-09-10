@@ -2,6 +2,7 @@ package com.grow.notification_service.note.application.service.impl;
 
 import com.grow.notification_service.note.application.dto.NotePageResponse;
 import com.grow.notification_service.note.application.dto.NoteResponse;
+import com.grow.notification_service.note.application.event.NoteNotificationProducer;
 import com.grow.notification_service.note.application.port.MemberPort;
 import com.grow.notification_service.note.application.service.NoteApplicationService;
 import com.grow.notification_service.note.presentation.dto.SendNoteRequest;
@@ -21,6 +22,7 @@ public class NoteApplicationServiceImpl implements NoteApplicationService {
 
 	private final NoteRepository noteRepository;
 	private final MemberPort memberPort;
+	private final NoteNotificationProducer noteNotificationProducer;
 
 	/**
 	 * 새 쪽지 생성, 저장
@@ -45,6 +47,16 @@ public class NoteApplicationServiceImpl implements NoteApplicationService {
 		log.info("[쪽지] 전송 완료 - senderId={}, recipientId={}, noteId={}",
 			senderId, saved.getRecipientId(), saved.getNoteId());
 
+		// 쪽지 도착 알림 이벤트 발행
+		Long recipientMemberId = saved.getRecipientId();
+		Long noteId = saved.getNoteId();
+		try {
+			noteNotificationProducer.noteReceived(recipientMemberId, noteId);
+			log.info("[쪽지][알림][발행] recipient={}, noteId={}", recipientMemberId, noteId);
+		} catch (Exception e) {
+			log.warn("[쪽지][알림][발행실패] recipient={}, noteId={}, err={}",
+				recipientMemberId, noteId, e.toString(), e);
+		}
 		return NoteResponse.from(saved);
 	}
 
