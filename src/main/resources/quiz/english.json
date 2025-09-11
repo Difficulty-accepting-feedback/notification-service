@@ -1,0 +1,607 @@
+[
+  {
+    "question": "How do you greet someone in the morning?",
+    "choices": ["Good morning", "Good night", "Hello night", "See you"],
+    "answer": "Good morning",
+    "explain": "아침 인사는 'Good morning'이 자연스럽다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "What is a common response to 'Thank you'?",
+    "choices": ["Sorry", "Good job", "You’re welcome", "Please"],
+    "answer": "You’re welcome",
+    "explain": "'Thank you'에는 'You’re welcome'이라고 답한다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "If someone says 'See you tomorrow', what do you reply?",
+    "choices": ["Bye", "See you tomorrow", "Thanks", "Welcome"],
+    "answer": "See you tomorrow",
+    "explain": "같은 인사로 되받아치는 것이 자연스럽다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "What do you say when meeting someone for the first time?",
+    "choices": ["Good job", "Nice to meet you", "Take care", "Good luck"],
+    "answer": "Nice to meet you",
+    "explain": "처음 만났을 때는 'Nice to meet you.'라고 한다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase means '안녕하세요'?",
+    "choices": ["Goodbye", "Hello", "See you", "Thank you"],
+    "answer": "Hello",
+    "explain": "일상적인 인사는 'Hello'다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "What do you say when you leave at night?",
+    "choices": [
+      "Good morning",
+      "Good evening",
+      "Good night",
+      "See you morning"
+    ],
+    "answer": "Good night",
+    "explain": "밤에 헤어질 때는 'Good night'이라고 한다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "How do you politely get someone’s attention?",
+    "choices": ["Hey!", "Excuse me", "Listen", "Yo!"],
+    "answer": "Excuse me",
+    "explain": "'Excuse me'는 정중하게 말을 걸 때 쓰인다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "What’s a polite way to order food?",
+    "choices": [
+      "I want pizza.",
+      "Pizza now!",
+      "Can I have a pizza, please?",
+      "Give me pizza."
+    ],
+    "answer": "Can I have a pizza, please?",
+    "explain": "정중한 주문은 'Can I have ... please?' 구조다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "If you don’t hear clearly, what can you say?",
+    "choices": ["What?", "Pardon?", "Goodbye?", "Sleep?"],
+    "answer": "Pardon?",
+    "explain": "못 들었을 때 정중히 묻는 말은 'Pardon?'이다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase is used to say farewell casually?",
+    "choices": ["Good morning", "Bye", "Hello", "Welcome"],
+    "answer": "Bye",
+    "explain": "'Bye'는 가볍게 작별 인사할 때 쓰인다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "What do you say if you did something wrong?",
+    "choices": ["Sorry", "Good job", "Please", "Hello"],
+    "answer": "Sorry",
+    "explain": "사과할 때는 'Sorry'라고 한다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "What’s the opposite of 'Yes'?",
+    "choices": ["Okay", "No", "Sure", "Fine"],
+    "answer": "No",
+    "explain": "Yes의 반대는 'No'다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase do you use when leaving work?",
+    "choices": ["Good morning", "Good night", "See you tomorrow", "Thanks"],
+    "answer": "See you tomorrow",
+    "explain": "퇴근하며 다음 날 볼 때는 'See you tomorrow'라고 한다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "What’s a casual way to say hello to a friend?",
+    "choices": ["Hi", "Good night", "Take care", "Goodbye"],
+    "answer": "Hi",
+    "explain": "친구끼리 가볍게 인사할 때는 'Hi'가 자연스럽다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "Which response fits 'How are you?'",
+    "choices": ["I’m fine, thanks.", "Goodbye.", "Yes, please.", "See you."],
+    "answer": "I’m fine, thanks.",
+    "explain": "가장 흔한 대답은 'I’m fine, thanks.'이다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "What do you say when you meet again after a while?",
+    "choices": [
+      "Long time no see!",
+      "Good night!",
+      "Take a seat!",
+      "Nice day!"
+    ],
+    "answer": "Long time no see!",
+    "explain": "오랜만에 만났을 때 'Long time no see!'라고 한다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "If you want to ask someone’s name?",
+    "choices": [
+      "Who are you?",
+      "What’s your name?",
+      "Your name is?",
+      "Tell me name."
+    ],
+    "answer": "What’s your name?",
+    "explain": "정중하게 이름을 물을 때는 'What’s your name?'이다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "When you leave a shop after buying, what do you often hear?",
+    "choices": [
+      "You’re welcome",
+      "See you soon",
+      "Have a nice day",
+      "Excuse me"
+    ],
+    "answer": "Have a nice day",
+    "explain": "가게에서 자주 듣는 인사는 'Have a nice day'다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "Which is the polite way to ask for help?",
+    "choices": ["Help me!", "Can you help me, please?", "Do it!", "Now help!"],
+    "answer": "Can you help me, please?",
+    "explain": "정중하게 부탁할 때는 'Can you help me, please?'라고 한다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase means '잘 지내?'",
+    "choices": ["How are you?", "What time?", "Who are you?", "See you"],
+    "answer": "How are you?",
+    "explain": "'How are you?'는 '잘 지내?'라는 의미다.",
+    "level": "EASY",
+    "categoryId": 2
+  },
+  {
+    "question": "What’s the polite way to ask someone to wait?",
+    "choices": ["Wait!", "Hold on a second, please.", "Stay!", "Stop now!"],
+    "answer": "Hold on a second, please.",
+    "explain": "정중하게 기다려 달라고 부탁할 때는 'Hold on a second, please.'라고 한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "How do you politely ask someone to repeat?",
+    "choices": [
+      "Say again!",
+      "Repeat!",
+      "Could you say that again, please?",
+      "One more!"
+    ],
+    "answer": "Could you say that again, please?",
+    "explain": "정중하게 다시 말해 달라고 할 때는 'Could you say that again, please?'를 쓴다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "What’s the best way to ask for directions to the station?",
+    "choices": [
+      "Station where?",
+      "Point station!",
+      "Excuse me, could you tell me the way to the station?",
+      "Show me station!"
+    ],
+    "answer": "Excuse me, could you tell me the way to the station?",
+    "explain": "길을 물을 때는 'Excuse me, could you tell me the way to ... ?' 형식을 사용한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "How do you accept an invitation politely?",
+    "choices": [
+      "I’d love to, thank you!",
+      "No way!",
+      "Maybe",
+      "Not interested"
+    ],
+    "answer": "I’d love to, thank you!",
+    "explain": "초대를 받아들일 때는 'I’d love to, thank you!'라고 말한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "If you arrive late to a meeting, what should you say?",
+    "choices": [
+      "Sorry for being late.",
+      "You wait?",
+      "Not my fault",
+      "Why so early?"
+    ],
+    "answer": "Sorry for being late.",
+    "explain": "지각했을 때는 반드시 사과하는 표현을 사용한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase is natural when suggesting lunch?",
+    "choices": [
+      "Lunch?",
+      "Eat now!",
+      "How about having lunch together?",
+      "Go food"
+    ],
+    "answer": "How about having lunch together?",
+    "explain": "제안할 때는 'How about ... ?' 구문을 사용한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "How do you ask about someone’s opinion politely?",
+    "choices": ["What do you think?", "You like?", "Think now?", "Say answer"],
+    "answer": "What do you think?",
+    "explain": "상대방 의견을 물을 때는 'What do you think?'라고 묻는다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase is used when you want to pay at a restaurant?",
+    "choices": ["Money!", "Check, please.", "Pay now!", "Bill now!"],
+    "answer": "Check, please.",
+    "explain": "레스토랑에서 계산할 때는 'Check, please.'라고 한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "How do you ask about the price politely?",
+    "choices": ["Money?", "Cost?", "How much is this?", "What pay?"],
+    "answer": "How much is this?",
+    "explain": "가격을 물을 때는 'How much is this?'를 사용한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase means '오랜만이야'?",
+    "choices": [
+      "Long time no see!",
+      "See you later!",
+      "Where are you?",
+      "Good morning!"
+    ],
+    "answer": "Long time no see!",
+    "explain": "오랜만에 만났을 때 'Long time no see!'라고 인사한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "How do you politely interrupt someone?",
+    "choices": [
+      "Stop talking",
+      "Excuse me, may I say something?",
+      "Wait me",
+      "Now me"
+    ],
+    "answer": "Excuse me, may I say something?",
+    "explain": "대화 중 끼어들 때는 'Excuse me, may I say something?'이 정중하다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "What do you say when you don’t understand?",
+    "choices": ["I don’t get it.", "Repeat", "Why?", "No"],
+    "answer": "I don’t get it.",
+    "explain": "이해하지 못했을 때는 'I don’t get it.'라고 한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "How do you say you are not sure?",
+    "choices": ["I don’t know.", "I’m not sure.", "Maybe yes.", "Guess."],
+    "answer": "I’m not sure.",
+    "explain": "확실하지 않을 때는 'I’m not sure.'라고 한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "What phrase is polite for refusing an offer?",
+    "choices": ["No!", "Not today, thanks.", "Go away", "Later!"],
+    "answer": "Not today, thanks.",
+    "explain": "정중하게 거절할 때는 'Not today, thanks.'라고 한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase is polite to ask someone’s opinion in a meeting?",
+    "choices": ["Tell answer", "What’s your opinion?", "Say now", "Speak up"],
+    "answer": "What’s your opinion?",
+    "explain": "회의에서 의견을 물을 때는 'What’s your opinion?'을 사용한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "How do you offer help politely?",
+    "choices": ["Need?", "Can I help you?", "Do it?", "Want help?"],
+    "answer": "Can I help you?",
+    "explain": "도움을 제안할 때는 'Can I help you?'라고 한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "What phrase means '조심해'?",
+    "choices": ["Take care", "Look here", "Be careful", "Check"],
+    "answer": "Be careful",
+    "explain": "상대에게 주의를 줄 때는 'Be careful.'이라고 한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "How do you ask for the time politely?",
+    "choices": ["What time is it, please?", "Give me time", "Say time", "Now?"],
+    "answer": "What time is it, please?",
+    "explain": "시간을 물을 때는 'What time is it, please?'라고 한다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase do you use when ending a phone call?",
+    "choices": ["Talk to you later", "Bye forever", "No more", "Done"],
+    "answer": "Talk to you later",
+    "explain": "전화 끝맺음에는 'Talk to you later.'가 흔하다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "What do you say when you want to join a conversation?",
+    "choices": ["Can I join?", "Now me", "Let me", "Together"],
+    "answer": "Can I join?",
+    "explain": "대화에 끼고 싶을 때는 'Can I join?'이라고 묻는다.",
+    "level": "NORMAL",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase is most appropriate in a formal email closing?",
+    "choices": ["See ya", "Later", "Best regards", "Catch you soon"],
+    "answer": "Best regards",
+    "explain": "공식 이메일에서는 'Best regards'와 같은 격식을 차린 마무리를 사용한다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "What does the phrase 'Let’s call it a day' mean?",
+    "choices": [
+      "Start working",
+      "End the day’s work",
+      "Make a phone call",
+      "Celebrate"
+    ],
+    "answer": "End the day’s work",
+    "explain": "'Let’s call it a day'는 오늘 일을 마무리하자는 의미다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase politely disagrees in a meeting?",
+    "choices": ["You’re wrong", "I don’t think so", "That’s stupid", "No way"],
+    "answer": "I don’t think so",
+    "explain": "격식을 갖춘 반대 표현은 'I don’t think so'이다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "What does 'I’ll get back to you' mean in business English?",
+    "choices": [
+      "I’ll return soon",
+      "I’ll answer later",
+      "I’ll leave now",
+      "I’ll forget it"
+    ],
+    "answer": "I’ll answer later",
+    "explain": "'I’ll get back to you'는 나중에 답변해주겠다는 의미다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "What’s the meaning of 'It’s on me' at a restaurant?",
+    "choices": ["I’ll pay", "You pay", "Split the bill", "No food"],
+    "answer": "I’ll pay",
+    "explain": "'It’s on me'는 내가 계산하겠다는 뜻이다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase means '의견이 일치하다'?",
+    "choices": ["See eye to eye", "Head to head", "Nose to nose", "Toe to toe"],
+    "answer": "See eye to eye",
+    "explain": "'See eye to eye'는 의견이 일치한다는 뜻이다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "What does 'break the ice' mean in conversation?",
+    "choices": [
+      "Destroy the ice",
+      "Start a conversation easily",
+      "Stop talking",
+      "Make trouble"
+    ],
+    "answer": "Start a conversation easily",
+    "explain": "'Break the ice'는 어색한 분위기를 깨고 대화를 시작한다는 의미다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase means '문제를 피하다'?",
+    "choices": [
+      "Beat around the bush",
+      "Straight to the point",
+      "Hit the sack",
+      "Pull strings"
+    ],
+    "answer": "Beat around the bush",
+    "explain": "'Beat around the bush'는 요점을 피한다는 뜻이다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "In business, which phrase is most polite when declining an offer?",
+    "choices": [
+      "No",
+      "I’m afraid I can’t accept it",
+      "Not possible",
+      "Forget it"
+    ],
+    "answer": "I’m afraid I can’t accept it",
+    "explain": "정중히 거절할 때는 'I’m afraid I can’t accept it.'을 사용한다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "What does 'to be on the same page' mean?",
+    "choices": [
+      "Reading the same book",
+      "Understanding and agreeing together",
+      "Working on a project",
+      "Writing together"
+    ],
+    "answer": "Understanding and agreeing together",
+    "explain": "'On the same page'는 같은 이해와 합의에 있다는 뜻이다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "Which idiom means 'start working hard immediately'?",
+    "choices": [
+      "Hit the ground running",
+      "Hit the sack",
+      "Take it easy",
+      "Go with the flow"
+    ],
+    "answer": "Hit the ground running",
+    "explain": "'Hit the ground running'은 바로 일을 시작하다는 뜻이다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "What does 'pull some strings' mean?",
+    "choices": [
+      "Play guitar",
+      "Use influence to get something",
+      "Fix problems",
+      "Break the rules"
+    ],
+    "answer": "Use influence to get something",
+    "explain": "'Pull some strings'는 연줄을 써서 뭔가를 얻는다는 의미다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase means '잘못된 길로 가다'?",
+    "choices": [
+      "Go down the wrong path",
+      "Go straight",
+      "Move ahead",
+      "Follow the rules"
+    ],
+    "answer": "Go down the wrong path",
+    "explain": "직역 그대로 '잘못된 길로 가다'라는 의미다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "In negotiations, what does 'Let’s meet halfway' mean?",
+    "choices": [
+      "Meet in the middle physically",
+      "Compromise",
+      "Stop the meeting",
+      "Delay decision"
+    ],
+    "answer": "Compromise",
+    "explain": "'Meet halfway'는 서로 타협하자는 의미다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase means '바쁜 상황에 빠지다'?",
+    "choices": ["Be tied up", "Be cool", "Be free", "Be lost"],
+    "answer": "Be tied up",
+    "explain": "'Be tied up'은 바빠서 시간이 없다는 뜻이다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "What does 'cut to the chase' mean?",
+    "choices": [
+      "Go to the cinema",
+      "Get to the main point",
+      "Run away",
+      "Stop talking"
+    ],
+    "answer": "Get to the main point",
+    "explain": "'Cut to the chase'는 요점으로 바로 들어가라는 뜻이다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "Which expression means 'keep in touch'?",
+    "choices": [
+      "Stay connected",
+      "Goodbye forever",
+      "See you once",
+      "Leave me"
+    ],
+    "answer": "Stay connected",
+    "explain": "'Keep in touch'는 계속 연락하자는 의미다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "What does 'the ball is in your court' mean?",
+    "choices": [
+      "Play tennis",
+      "It’s your decision",
+      "Keep quiet",
+      "Start again"
+    ],
+    "answer": "It’s your decision",
+    "explain": "'The ball is in your court'는 결정권이 네게 있다는 뜻이다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "Which phrase means '피곤해서 잠들다'?",
+    "choices": ["Hit the sack", "Run away", "Catch a ball", "Go crazy"],
+    "answer": "Hit the sack",
+    "explain": "'Hit the sack'는 잠자리에 들다라는 관용 표현이다.",
+    "level": "HARD",
+    "categoryId": 2
+  },
+  {
+    "question": "What does 'in the long run' mean?",
+    "choices": ["Quickly", "Eventually", "At the start", "Immediately"],
+    "answer": "Eventually",
+    "explain": "'In the long run'은 결국, 장기적으로는 이라는 뜻이다.",
+    "level": "HARD",
+    "categoryId": 2
+  }
+]
