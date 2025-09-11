@@ -1,4 +1,4 @@
-package com.grow.notification_service.quiz.presentation;
+package com.grow.notification_service.quiz.presentation.controller;
 
 import java.util.List;
 
