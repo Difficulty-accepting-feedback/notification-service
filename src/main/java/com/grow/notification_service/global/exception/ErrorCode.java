@@ -22,7 +22,15 @@ public enum ErrorCode {
 
 	// 공지사항
 	NO_PERMISSION_TO_WRITE_NOTICE(HttpStatus.FORBIDDEN, "403-2", "no.permission.to.write.notice"),
-	NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "404-2", "notice.not.found"),;
+	NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "404-2", "notice.not.found"),
+
+	// 퀴즈
+	MEMBER_RESULT_FETCH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-1", "member.result.fetch.failed"),
+	INVALID_SKILL_TAG(HttpStatus.BAD_REQUEST, "400-4", "invalid.skill.tag"),
+	UNSUPPORTED_MODE(HttpStatus.BAD_REQUEST, "400-5", "unsupported.mode"),
+	QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "404-3", "quiz.not.found"),
+	CATEGORY_MISMATCH(HttpStatus.BAD_REQUEST, "400-6", "category.mismatch"),;
+
 	private final HttpStatus status;
 	private final String code;
 	private final String messageCode;
