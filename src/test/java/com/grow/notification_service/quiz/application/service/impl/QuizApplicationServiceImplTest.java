@@ -1,5 +1,6 @@
 package com.grow.notification_service.quiz.application.service.impl;
 
+import com.grow.notification_service.global.exception.ErrorCode;
 import com.grow.notification_service.global.exception.QuizException;
 import com.grow.notification_service.quiz.application.MemberQuizResultPort;
 import com.grow.notification_service.quiz.application.dto.QuizItem;
@@ -98,7 +99,8 @@ class QuizApplicationServiceImplTest {
 		@Test
 		@DisplayName("에러: skillTag 매핑 실패시 QuizException")
 		void error_invalid_skill_tag() {
-			when(registry.resolveOrThrow("NOPE")).thenThrow(new IllegalArgumentException("nope"));
+			when(registry.resolveOrThrow("NOPE"))
+				.thenThrow(new QuizException(ErrorCode.INVALID_SKILL_TAG));
 			assertThrows(QuizException.class, () -> service.pickQuizByMode(1L, "NOPE", "EASY"));
 			verify(quizRepository, never()).pick(anyLong(), any(), anyList(), any());
 		}
@@ -152,7 +154,8 @@ class QuizApplicationServiceImplTest {
 		@Test
 		@DisplayName("에러: skillTag 매핑 실패시 QuizException")
 		void error_invalid_skill_tag_on_submit() {
-			when(registry.resolveOrThrow("NOPE")).thenThrow(new IllegalArgumentException("nope"));
+			when(registry.resolveOrThrow("NOPE"))
+				.thenThrow(new QuizException(ErrorCode.INVALID_SKILL_TAG));
 			SubmitAnswersRequest req = new SubmitAnswersRequest("NOPE", "EASY",
 				List.of(new SubmitAnswerItem(1L, "A")));
 			assertThrows(QuizException.class, () -> service.submitAnswers(1L, req));
