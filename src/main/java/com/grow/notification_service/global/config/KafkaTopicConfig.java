@@ -20,4 +20,12 @@ public class KafkaTopicConfig {
 			.replicas(3)
 			.build();
 	}
+
+	@Bean
+	public NewTopic memberQuizAnswered() {
+		return TopicBuilder.name("member.quiz.answered")
+			.partitions(3)
+			.replicas(3)
+			.build();
+	}
 }

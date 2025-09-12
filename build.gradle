@@ -32,13 +32,14 @@ def jacocoExcludes = [
 		'**/constants/**',
 		'**/listener/**',
 		'**/swagger/**',
-		'**/*Application*',
+		'**/NotificationServiceApplication*',
 		'**/client/**',
 		'**/analysis/**',
 		'**/event/**',
 		'**/kafka/**',
 		'**/slack/**',
-		'**/util/**'
+		'**/util/**',
+		'**/seed/**',
 
 ]
 
@@ -130,6 +131,9 @@ dependencies {
 
 	// slack
 	implementation 'com.slack.api:slack-api-client:1.43.0'
+
+	// json 타입을 rdbms에 저장하기 위한 hibernate-types
+	implementation("com.vladmihalcea:hibernate-types-60:2.21.1")
 }
 
 tasks.named('test') {

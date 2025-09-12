@@ -1,6 +1,11 @@
 package com.grow.notification_service.quiz.infra.persistence.entity;
 
+import java.util.List;
+
+import org.hibernate.annotations.Type;
+
 import com.grow.notification_service.quiz.infra.persistence.enums.QuizLevel;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,6 +15,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,12 +25,10 @@ import lombok.NoArgsConstructor;
 @Getter
 @Builder
 @Table(name = "quiz")
-@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
-
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class QuizJpaEntity {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long quizId;
 
 	@Column(nullable = false, columnDefinition = "TEXT")
@@ -42,4 +46,8 @@ public class QuizJpaEntity {
 
 	@Column(nullable = false)
 	private Long categoryId;
+
+	@Type(JsonType.class)
+	@Column(columnDefinition = "json", nullable = false)
+	private List<String> choices;
 }
