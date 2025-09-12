@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/qna")
+@RequestMapping("/api/v1/notification/qna")
 @Tag(name = "QNA 목록 조회", description = "QNA 루트 질문 목록 & 전체 스레드 조회 API (관리자/개인)")
 @Validated
 public class QnaQueryController {
