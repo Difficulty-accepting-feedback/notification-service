@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/notices")
+@RequestMapping("/api/v1/notification/notices")
 @Tag(name = "NOTICE", description = "공지 API")
 @Validated
 public class NoticeController {

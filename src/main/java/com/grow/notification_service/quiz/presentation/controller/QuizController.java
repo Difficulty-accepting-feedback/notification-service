@@ -19,7 +19,7 @@ import com.grow.notification_service.quiz.presentation.dto.SubmitAnswersResponse
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/quizzes")
+@RequestMapping("/api/v1/notification/quizzes")
 @RequiredArgsConstructor
 public class QuizController {
 

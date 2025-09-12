@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/qna")
+@RequestMapping("/api/v1/notification/qna")
 @Tag(name = "QNA", description = "QNA(질문/답변) API")
 @Validated
 public class QnaController {

@@ -17,6 +17,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/v1/notification")
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -38,7 +39,7 @@ public class NotificationController {
      * @param memberId 클라이언트의 사용자 ID (헤더에서 추출됨). Long 타입으로, null이 아닌 유효한 ID여야 합니다.
      * @return SseEmitter 객체. 이 객체를 통해 서버-클라이언트 간 SSE 연결이 유지됩니다.
      */
-    @GetMapping(value = "/api/v1/notification/subscribe",
+    @GetMapping(value = "/subscribe",
             produces = MediaType.TEXT_EVENT_STREAM_VALUE
     )
     public SseEmitter subscribe(
@@ -55,7 +56,7 @@ public class NotificationController {
         return sseSendService.subscribe(memberId);
     }
 
-    @PostMapping("/api/v1/notify")
+    @PostMapping("/notify")
     public RsData<String> triggerNotification(@RequestHeader("X-Authorization-Id") Long memberId,
                                               @RequestParam("type") NotificationType notificationType,
                                               @RequestBody String message) {
