@@ -98,13 +98,7 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 			memberId, req.skillTag(), req.mode(), itemCount);
 
 		// skillTag -> categoryId 매핑
-		final Long categoryId;
-		try {
-			categoryId = registry.resolveOrThrow(req.skillTag());
-		} catch (IllegalArgumentException e) {
-			log.warn("[QUIZ][제출][거절] 알 수 없는 skillTag={} (카테고리 매핑 실패)", req.skillTag());
-			throw new QuizException(ErrorCode.INVALID_SKILL_TAG, e);
-		}
+		final Long categoryId = registry.resolveOrThrow(req.skillTag());
 
 		// 정답 처리
 		int correct = 0;
