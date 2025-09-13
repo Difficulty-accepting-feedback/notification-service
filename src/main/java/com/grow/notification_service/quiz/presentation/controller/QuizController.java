@@ -44,6 +44,19 @@ public class QuizController {
 		);
 	}
 
+	@GetMapping("/review")
+	public RsData<List<QuizItem>> pickReview(
+		@RequestHeader("X-Authorization-Id") Long memberId,
+		@RequestParam String skillTag,
+		@RequestParam String mode,
+		@RequestParam(required = false) Integer total,
+		@RequestParam(required = false) Double wrongRatio
+	) {
+		List<QuizItem> data = appService.pickReviewByHistory(memberId, skillTag, mode, total, wrongRatio);
+
+		return new RsData<>("200", "혼합 출제(틀린 문제 우선) 조회 완료", data);
+	}
+
 	/**
 	 * 퀴즈 정답 제출
 	 * @param memberId - X-Authorization-Id
