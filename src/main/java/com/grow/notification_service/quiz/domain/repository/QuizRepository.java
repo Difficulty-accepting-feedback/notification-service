@@ -17,4 +17,8 @@ public interface QuizRepository {
 	boolean existsByCategoryIdAndQuestion(Long categoryId, String question);
 
 	List<Quiz> pick(Long categoryId, QuizLevel level, List<Long> excludedQuizIds, Pageable pageable);
+
+	List<Quiz> pickFromIncludeIds(Long categoryId, QuizLevel level, List<Long> includeIds, Pageable pageable);
+
+	List<Quiz> pickFillRandomExcluding(Long categoryId, QuizLevel level, List<Long> excludedIds, Pageable pageable);
 }

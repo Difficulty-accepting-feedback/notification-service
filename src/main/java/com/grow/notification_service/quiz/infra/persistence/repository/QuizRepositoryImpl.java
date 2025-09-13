@@ -75,4 +75,40 @@ public class QuizRepositoryImpl implements QuizRepository {
 		}
 		return rows.stream().map(mapper::toDomain).toList();
 	}
+
+	/**
+	 * 특정 퀴즈 ID 목록에서 무작위로 퀴즈 선택
+	 * @param categoryId 카테고리 ID
+	 * @param level 난이도 (null이면 모든 난이도)
+	 * @param includeIds 포함할 퀴즈 ID 목록 (null 또는 빈 리스트이면 빈 리스트 반환)
+	 * @param pageable 페이지 정보 (예: PageRequest.of(0, 5) - 첫 페이지, 5개 항목)
+	 * @return 퀴즈 도메인 객체 목록
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public List<Quiz> pickFromIncludeIds(Long categoryId, QuizLevel level, List<Long> includeIds, Pageable pageable) {
+		if (includeIds == null || includeIds.isEmpty()) return List.of();
+		return jpa.pickByIncludeIds(categoryId, level, includeIds, pageable)
+			.stream()
+			.map(mapper::toDomain)
+			.toList();
+	}
+
+	/**
+	 * 특정 카테고리와 난이도에서, 제외할 퀴즈 ID 목록을 제외하고 무작위로 퀴즈 선택
+	 * @param categoryId 카테고리 ID
+	 * @param level 난이도 (null이면 모든 난이도)
+	 * @param excludedIds 제외할 퀴즈 ID 목록 (null 또는 빈 리스트 가능)
+	 * @param pageable 페이지 정보 (예: PageRequest.of(0, 5) - 첫 페이지, 5개 항목)
+	 * @return 퀴즈 도메인 객체 목록
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public List<Quiz> pickFillRandomExcluding(Long categoryId, QuizLevel level, List<Long> excludedIds, Pageable pageable) {
+		List<Long> excluded = (excludedIds == null) ? List.of() : excludedIds;
+		return jpa.pickFillRandomExcluding(categoryId, level, excluded, pageable)
+			.stream()
+			.map(mapper::toDomain)
+			.toList();
+	}
 }
