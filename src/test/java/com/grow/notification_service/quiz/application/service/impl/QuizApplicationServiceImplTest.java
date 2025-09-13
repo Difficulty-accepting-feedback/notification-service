@@ -13,6 +13,7 @@ import com.grow.notification_service.quiz.infra.persistence.enums.QuizLevel;
 import com.grow.notification_service.quiz.presentation.dto.SubmitAnswerItem;
 import com.grow.notification_service.quiz.presentation.dto.SubmitAnswersRequest;
 import com.grow.notification_service.quiz.presentation.dto.SubmitAnswersResponse;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -207,6 +208,185 @@ class QuizApplicationServiceImplTest {
 			assertEquals(0, resp.correctCount());
 			verify(eventPublisher, times(2))
 				.publish(eq(123L), anyLong(), eq(10L), anyString(), anyString(), eq(false));
+		}
+	}
+
+	@Nested
+	@DisplayName("pickReviewByHistory")
+	class PickReviewByHistory {
+
+		@Test
+		@DisplayName("정상: 복습 출제 - 틀린 문제 우선, 부족분은 맞은 문제에서 보충")
+		void success_review_basic() {
+			Long memberId = 1L;
+			String skillTag = "JAVA_PROGRAMMING";
+			Long categoryId = 10L;
+
+			when(registry.resolveOrThrow(skillTag)).thenReturn(categoryId);
+
+			List<Long> wrongIds = List.of(1L, 2L, 3L, 4L);
+			List<Long> correctIds = List.of(5L, 6L, 7L);
+			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, false)).thenReturn(wrongIds);
+			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, true)).thenReturn(correctIds);
+
+			// historyInCategory (unionIds = 7개) 정확 매칭
+			List<Long> unionIds = List.of(1L,2L,3L,4L,5L,6L,7L);
+			List<Quiz> historyQuizzes = unionIds.stream()
+				.map(id -> makeQuiz(id, categoryId, QuizLevel.EASY, "A"))
+				.toList();
+			when(quizRepository.pickFromIncludeIds(
+				eq(categoryId),
+				isNull(),
+				argThat(list -> list != null && list.containsAll(unionIds) && list.size() == unionIds.size()),
+				any(PageRequest.class))
+			).thenReturn(historyQuizzes);
+
+			// 1) wrong 3개 (wrongIds 정확 매칭)
+			List<Quiz> fromWrong = List.of(
+				makeQuiz(1L, categoryId, QuizLevel.EASY, "A"),
+				makeQuiz(2L, categoryId, QuizLevel.EASY, "A"),
+				makeQuiz(3L, categoryId, QuizLevel.EASY, "A")
+			);
+			when(quizRepository.pickFromIncludeIds(
+				eq(categoryId),
+				isNull(),
+				eq(wrongIds),
+				any(PageRequest.class))
+			).thenReturn(fromWrong);
+
+			// 2) correct 2개 (correctIds 풀만 매칭되도록 사이즈 조건 추가)
+			List<Quiz> fromCorrect = List.of(
+				makeQuiz(5L, categoryId, QuizLevel.NORMAL, "B"),
+				makeQuiz(6L, categoryId, QuizLevel.NORMAL, "B")
+			);
+			when(quizRepository.pickFromIncludeIds(
+				eq(categoryId),
+				isNull(),
+				argThat(list -> list != null
+					&& list.containsAll(correctIds)
+					&& list.size() == correctIds.size()),
+				any(PageRequest.class))
+			).thenReturn(fromCorrect);
+
+			List<QuizItem> items = service.pickReviewByHistory(memberId, skillTag, "RANDOM", 5, 0.6);
+
+			assertEquals(5, items.size());
+			verify(quizRepository, never()).pickFillRandomExcluding(anyLong(), any(), anyList(), any());
+		}
+
+		@Test
+		@DisplayName("에러: 복습 최소 이력(<5) 미달 시 예외")
+		void error_not_enough_history() {
+			Long memberId = 1L;
+			String skillTag = "JAVA_PROGRAMMING";
+			Long categoryId = 10L;
+
+			when(registry.resolveOrThrow(skillTag)).thenReturn(categoryId);
+
+			// history: wrong 2 + correct 2 = 4 (<5)
+			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, false)).thenReturn(List.of(1L, 2L));
+			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, true)).thenReturn(List.of(3L, 4L));
+
+			// historyInCategory 결과도 4개로 귀결되도록 stub
+			List<Long> unionIds = List.of(1L,2L,3L,4L);
+			List<Quiz> historyQuizzes = unionIds.stream()
+				.map(id -> makeQuiz(id, categoryId, QuizLevel.EASY, "A"))
+				.toList();
+			when(quizRepository.pickFromIncludeIds(eq(categoryId), isNull(), eq(unionIds), any(PageRequest.class)))
+				.thenReturn(historyQuizzes);
+
+			assertThrows(QuizException.class,
+				() -> service.pickReviewByHistory(memberId, skillTag, "RANDOM", 5, 0.6));
+
+			verify(quizRepository, never()).pickFromIncludeIds(eq(categoryId), isNull(), eq(List.of(1L,2L)), any());
+			verify(quizRepository, never()).pickFillRandomExcluding(anyLong(), any(), anyList(), any());
+		}
+
+		@Test
+		@DisplayName("정상: 틀린 문제 부족 → 랜덤 보충으로 채움")
+		void success_fill_random_when_wrong_short() {
+			Long memberId = 2L;
+			String skillTag = "JAVA_PROGRAMMING";
+			Long categoryId = 10L;
+
+			when(registry.resolveOrThrow(skillTag)).thenReturn(categoryId);
+
+			// 틀린 1개, 맞은 5개 → unionIds = 6개 >= 5 (최소 이력 충족)
+			List<Long> wrongIds = List.of(1L);
+			List<Long> correctIds = List.of(9L, 10L, 11L, 12L, 13L);
+			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, false)).thenReturn(wrongIds);
+			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, true)).thenReturn(correctIds);
+
+			// historyInCategory는 unionIds 전체가 반환되도록 정확 매칭
+			List<Long> unionIds = new java.util.ArrayList<>();
+			unionIds.addAll(wrongIds);
+			unionIds.addAll(correctIds);
+			List<Quiz> historyQuizzes = unionIds.stream()
+				.map(id -> makeQuiz(id, categoryId, QuizLevel.NORMAL, "C"))
+				.toList();
+			when(quizRepository.pickFromIncludeIds(
+				eq(categoryId),
+				isNull(),
+				argThat(list -> list != null && list.containsAll(unionIds) && list.size() == unionIds.size()),
+				any(PageRequest.class))
+			).thenReturn(historyQuizzes);
+
+			// total=5, wrongRatio=0.6 → wrongNeed=3, correctNeed=2
+			// 1) 틀린에서 1개만 뽑힘(부족)
+			List<Quiz> fromWrong = List.of(makeQuiz(1L, categoryId, QuizLevel.NORMAL, "C"));
+			when(quizRepository.pickFromIncludeIds(
+				eq(categoryId),
+				isNull(),
+				eq(wrongIds),
+				any(PageRequest.class))
+			).thenReturn(fromWrong);
+
+			// 2) 맞은 문제에서 2개 보충
+			List<Quiz> fromCorrect = List.of(
+				makeQuiz(9L, categoryId, QuizLevel.EASY, "A"),
+				makeQuiz(10L, categoryId, QuizLevel.EASY, "A")
+			);
+			when(quizRepository.pickFromIncludeIds(
+				eq(categoryId),
+				isNull(),
+				argThat(list -> list != null
+					&& list.containsAll(correctIds)
+					&& list.size() == correctIds.size()),
+				any(PageRequest.class))
+			).thenReturn(fromCorrect);
+
+			// 3) 랜덤 보충 2개(총 5개 맞추기)
+			List<Quiz> fills = List.of(
+				makeQuiz(101L, categoryId, QuizLevel.EASY, "A"),
+				makeQuiz(102L, categoryId, QuizLevel.EASY, "A")
+			);
+			when(quizRepository.pickFillRandomExcluding(eq(categoryId), isNull(), anyList(), any(PageRequest.class)))
+				.thenReturn(fills);
+
+			List<QuizItem> items = service.pickReviewByHistory(memberId, skillTag, "RANDOM", 5, 0.6);
+
+			assertEquals(5, items.size());
+			verify(quizRepository).pickFromIncludeIds(eq(categoryId), isNull(), eq(wrongIds), any(PageRequest.class));
+			verify(quizRepository).pickFromIncludeIds(
+				eq(categoryId),
+				isNull(),
+				argThat(list -> list != null
+					&& list.containsAll(correctIds)
+					&& list.size() == correctIds.size()),
+				any(PageRequest.class)
+			);
+			verify(quizRepository).pickFillRandomExcluding(eq(categoryId), isNull(), anyList(), any(PageRequest.class));
+		}
+
+
+
+		@Test
+		@DisplayName("에러: 지원하지 않는 모드이면 QuizException (복습)")
+		void error_unsupported_mode_on_review() {
+			when(registry.resolveOrThrow("JAVA_PROGRAMMING")).thenReturn(10L);
+			assertThrows(QuizException.class,
+				() -> service.pickReviewByHistory(1L, "JAVA_PROGRAMMING", "INSANE", 5, 0.6));
+			verify(quizRepository, never()).pickFromIncludeIds(anyLong(), any(), anyList(), any());
 		}
 	}
 }
