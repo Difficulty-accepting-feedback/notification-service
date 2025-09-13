@@ -10,4 +10,9 @@ public interface QuizApplicationService {
 	List<QuizItem> pickQuizByMode(Long memberId, String skillTagCode, String mode);
 
 	SubmitAnswersResponse submitAnswers(Long memberId, SubmitAnswersRequest req);
+
+	List<QuizItem> pickReviewByHistory(
+		Long memberId, String skillTagCode, String mode,
+		Integer totalOpt, Double wrongRatioOpt
+	);
 }

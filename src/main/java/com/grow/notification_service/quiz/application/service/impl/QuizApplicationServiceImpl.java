@@ -1,5 +1,6 @@
 package com.grow.notification_service.quiz.application.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +16,7 @@ import com.grow.notification_service.quiz.application.mapping.SkillTagToCategory
 import com.grow.notification_service.quiz.application.service.QuizApplicationService;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;
+import com.grow.notification_service.quiz.domain.service.QuizReviewService;
 import com.grow.notification_service.quiz.infra.persistence.enums.QuizLevel;
 import com.grow.notification_service.quiz.presentation.dto.SubmitAnswerItem;
 import com.grow.notification_service.quiz.presentation.dto.SubmitAnswerResult;
@@ -34,6 +36,7 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 	private final QuizRepository quizRepository;
 	private final QuizAnsweredProducer eventPublisher;
 
+	private final QuizReviewService reviewService = new QuizReviewService();
 	/**
 	 * 난이도별 5문제 출제 (정답 문제 제외)
 	 * - mode: EASY | NORMAL | HARD | RANDOM
@@ -156,5 +159,102 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 		SubmitAnswersResponse resp = new SubmitAnswersResponse(itemCount, correct, results);
 		log.info("[QUIZ][제출][성공] memberId={}, total={}, correct={}", memberId, itemCount, correct);
 		return resp;
+	}
+
+	/**
+	 * 회원의 퀴즈 풀이 이력 기반 출제
+	 * - 틀린 문제 비율(wrongRatio)만큼 틀린 문제에서 우선 출제
+	 * - 부족분은 맞은 문제에서 출제
+	 * - 그래도 부족하면 카테고리 내 랜덤 출제
+	 * @param memberId 회원 ID
+	 * @param skillTagCode - study_service의 SkillTag.name()
+	 * @param mode - EASY | NORMAL | HARD | RANDOM
+	 * @param totalOpt 출제할 총 문제 수 (기본 5)
+	 * @param wrongRatioOpt 틀린 문제 비율 (0.0 ~ 1.0, 기본 0.6)
+	 * @return 출제된 퀴즈 목록
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public List<QuizItem> pickReviewByHistory(
+		Long memberId, String skillTagCode, String mode,
+		Integer totalOpt, Double wrongRatioOpt
+	) {
+		final Long categoryId = registry.resolveOrThrow(skillTagCode);
+
+		final QuizLevel level = switch ((mode == null ? "" : mode.trim().toUpperCase())) {
+			case "EASY" -> QuizLevel.EASY;
+			case "NORMAL" -> QuizLevel.NORMAL;
+			case "HARD" -> QuizLevel.HARD;
+			case "RANDOM" -> null;
+			default -> throw new QuizException(ErrorCode.UNSUPPORTED_MODE);
+		};
+
+		// 카테고리 내 히스토리 수집
+		List<Long> wrongIds   = memberResultPort.findAnsweredQuizIds(memberId, categoryId, false);
+		List<Long> correctIds = memberResultPort.findAnsweredQuizIds(memberId, categoryId, true);
+
+		// 히스토리 합집합
+		List<Long> unionIds = new ArrayList<>();
+		if (wrongIds != null)   unionIds.addAll(wrongIds);
+		if (correctIds != null) unionIds.addAll(correctIds);
+		unionIds = unionIds.stream().distinct().toList();
+
+		// 카테고리 내 히스토리 조회
+		List<Quiz> historyInCategory = unionIds.isEmpty()
+			? List.<Quiz>of()
+			: quizRepository.pickFromIncludeIds(categoryId, null, unionIds, PageRequest.of(0, unionIds.size()));
+
+		// 최소 이력 검사
+		if (!reviewService.hasEnoughHistory(historyInCategory)) {
+			log.warn("[QUIZ][복습][거절] 최소 이력 미달 - memberId={}, categoryId={}, history={}",
+				memberId, categoryId, historyInCategory.size());
+			throw new QuizException(ErrorCode.NOT_ENOUGH_HISTORY);
+		}
+
+		// 필요한 정/오답 개수 계산
+		QuizReviewService.Need need = reviewService.computeNeeds(
+			(totalOpt == null ? 0 : totalOpt),
+			wrongRatioOpt
+		);
+		int total = need.wrong() + need.correct();
+		int wrongNeed = need.wrong();
+		int correctNeed = need.correct();
+
+		List<Long> pickedIds = new ArrayList<>();
+		List<Quiz> picked = new ArrayList<>();
+
+		// 틀린 문제 우선
+		if (wrongIds != null && !wrongIds.isEmpty() && wrongNeed > 0) {
+			PageRequest page = PageRequest.of(0, wrongNeed);
+			List<Quiz> fromWrong = quizRepository.pickFromIncludeIds(categoryId, level, wrongIds, page);
+			picked.addAll(fromWrong);
+			pickedIds.addAll(fromWrong.stream().map(Quiz::getQuizId).toList());
+		}
+
+		// 맞은 문제 보충
+		int remain = total - picked.size();
+		if (remain > 0 && correctIds != null && !correctIds.isEmpty()) {
+			List<Long> pool = correctIds.stream().filter(id -> !pickedIds.contains(id)).toList();
+			if (!pool.isEmpty()) {
+				PageRequest page = PageRequest.of(0, Math.min(correctNeed, remain));
+				List<Quiz> fromCorrect = quizRepository.pickFromIncludeIds(categoryId, level, pool, page);
+				picked.addAll(fromCorrect);
+				pickedIds.addAll(fromCorrect.stream().map(Quiz::getQuizId).toList());
+			}
+		}
+
+		// 랜덤 보충
+		remain = total - picked.size();
+		if (remain > 0) {
+			PageRequest page = PageRequest.of(0, remain);
+			List<Quiz> fills = quizRepository.pickFillRandomExcluding(categoryId, level, pickedIds, page);
+			picked.addAll(fills);
+			pickedIds.addAll(fills.stream().map(Quiz::getQuizId).toList());
+		}
+
+		log.info("[QUIZ][복습][성공] memberId={}, categoryId={}, mode={}, total={}, wrongNeed={}, correctNeed={}, picked={}",
+			memberId, categoryId, mode, total, wrongNeed, correctNeed, picked.size());
+
+		return picked.stream().map(QuizItem::from).toList();
 	}
 }
