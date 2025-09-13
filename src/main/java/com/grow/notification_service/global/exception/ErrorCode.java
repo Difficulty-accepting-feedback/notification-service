@@ -29,7 +29,8 @@ public enum ErrorCode {
 	INVALID_SKILL_TAG(HttpStatus.BAD_REQUEST, "400-4", "invalid.skill.tag"),
 	UNSUPPORTED_MODE(HttpStatus.BAD_REQUEST, "400-5", "unsupported.mode"),
 	QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "404-3", "quiz.not.found"),
-	CATEGORY_MISMATCH(HttpStatus.BAD_REQUEST, "400-6", "category.mismatch"),;
+	CATEGORY_MISMATCH(HttpStatus.BAD_REQUEST, "400-6", "category.mismatch"),
+	NOT_ENOUGH_HISTORY(HttpStatus.BAD_REQUEST, "400-7", "not.enough.history"),;
 
 	private final HttpStatus status;
 	private final String code;
