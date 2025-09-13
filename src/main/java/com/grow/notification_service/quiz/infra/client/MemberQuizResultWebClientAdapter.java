@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -62,6 +63,30 @@ public class MemberQuizResultWebClientAdapter implements MemberQuizResultPort {
 							new QuizException(ErrorCode.MEMBER_RESULT_FETCH_FAILED, new RuntimeException(body)));
 					})
 			)
+			.bodyToMono(new ParameterizedTypeReference<RsData<List<Long>>>() {})
+			.block();
+
+		if (rs == null || rs.data == null) {
+			throw new QuizException(ErrorCode.MEMBER_RESULT_FETCH_FAILED);
+		}
+		return rs.data;
+	}
+
+	@Override
+	public List<Long> findAnsweredQuizIds(Long memberId, Long categoryId, Boolean correct) {
+		var uriSpec = memberClient.get()
+			.uri(uriBuilder -> uriBuilder
+				.path("/internal/quiz-results/members/{memberId}/ids")
+				.queryParamIfPresent("categoryId", Optional.ofNullable(categoryId))
+				.queryParamIfPresent("correct", Optional.ofNullable(correct))
+				.build(memberId)
+			);
+
+		RsData<List<Long>> rs = uriSpec.retrieve()
+			.onStatus(HttpStatusCode::isError,
+				resp -> resp.bodyToMono(String.class).defaultIfEmpty("")
+					.flatMap(body -> reactor.core.publisher.Mono.error(
+						new QuizException(ErrorCode.MEMBER_RESULT_FETCH_FAILED, new RuntimeException(body)))))
 			.bodyToMono(new ParameterizedTypeReference<RsData<List<Long>>>() {})
 			.block();
 
