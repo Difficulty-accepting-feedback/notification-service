@@ -59,4 +59,40 @@ public interface QuizJpaRepository
 		QuizLevel level,
 		List<Long> excludedIds,
 		Pageable pageable);
+
+	/**
+	 * 특정 카테고리 ID와 (선택적) 난이도 조건에 맞는 퀴즈를 무작위로 조회하되,
+	 * 주어진 퀴즈 ID 목록에서만 선택합니다.
+	 * @param categoryId 카테고리 ID
+	 * @param level 난이도 (null일 경우 모든 난이도 포함)
+	 * @param includeIds 포함할 퀴즈 ID 목록 (빈 리스트 가능)
+	 * @param pageable 페이지 정보 (예: PageRequest.of(0, 5) - 첫 페이지, 5개 항목)
+	 * @return 퀴즈 목록
+	 */
+	@Query("""
+    select q from QuizJpaEntity q
+    where q.categoryId = :categoryId
+      and (:level is null or q.level = :level)
+      and q.quizId in :includeIds
+    order by function('rand')
+""")
+	List<QuizJpaEntity> pickByIncludeIds(Long categoryId, QuizLevel level, List<Long> includeIds, Pageable pageable);
+
+	/**
+	 * 특정 카테고리 ID와 (선택적) 난이도 조건에 맞는 퀴즈를 무작위로 조회하되,
+	 * 주어진 퀴즈 ID 목록은 제외합니다.
+	 * @param categoryId 카테고리 ID
+	 * @param level 난이도 (null일 경우 모든 난이도 포함)
+	 * @param excludedIds 제외할 퀴즈 ID 목록 (빈 리스트 가능)
+	 * @param pageable 페이지 정보 (예: PageRequest.of(0, 5) - 첫 페이지, 5개 항목)
+	 * @return 퀴즈 목록
+	 */
+	@Query("""
+    select q from QuizJpaEntity q
+    where q.categoryId = :categoryId
+      and (:level is null or q.level = :level)
+      and q.quizId not in :excludedIds
+    order by function('rand')
+""")
+	List<QuizJpaEntity> pickFillRandomExcluding(Long categoryId, QuizLevel level, List<Long> excludedIds, Pageable pageable);
 }
