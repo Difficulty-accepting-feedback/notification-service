@@ -111,4 +111,16 @@ public class QuizRepositoryImpl implements QuizRepository {
 			.map(mapper::toDomain)
 			.toList();
 	}
+
+	/**
+	 * 퀴즈 ID 목록으로 퀴즈 조회
+	 * @param quizIds 조회할 퀴즈 ID 목록
+	 * @return 퀴즈 도메인 객체 목록 (존재하지 않는 ID는 무시)
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public List<Quiz> findByIds(List<Long> quizIds) {
+		if (quizIds == null || quizIds.isEmpty()) return List.of();
+		return jpa.findAllById(quizIds).stream().map(mapper::toDomain).toList();
+	}
 }

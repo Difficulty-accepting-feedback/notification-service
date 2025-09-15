@@ -21,4 +21,6 @@ public interface QuizRepository {
 	List<Quiz> pickFromIncludeIds(Long categoryId, QuizLevel level, List<Long> includeIds, Pageable pageable);
 
 	List<Quiz> pickFillRandomExcluding(Long categoryId, QuizLevel level, List<Long> excludedIds, Pageable pageable);
+
+	List<Quiz> findByIds(List<Long> quizIds);
 }
