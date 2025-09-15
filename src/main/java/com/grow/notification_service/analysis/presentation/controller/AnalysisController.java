@@ -1,6 +1,7 @@
 package com.grow.notification_service.analysis.presentation.controller;
 
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,16 +19,29 @@ import lombok.RequiredArgsConstructor;
 public class AnalysisController {
 
 	private final AnalysisApplicationService service;
+	private final ObjectMapper objectMapper;
 
 	/**
 	 * 자바 프로그래밍 학습 로드맵 분석 요청 (테스트용입니다)
 	 */
 	@PostMapping
 	public AnalysisResponse analyze(
-		@RequestParam Long memberId,
+		@RequestHeader("X-Authorization-Id") Long memberId,
 		@RequestParam Long categoryId
 	) {
 		Analysis analysis = service.analyze(memberId, categoryId);
 		return AnalysisResponse.from(analysis, new ObjectMapper());
+	}
+
+	/**
+	 * 틀린 퀴즈 기반 분석 요청
+	 */
+	@PostMapping("/quiz")
+	public AnalysisResponse analyzeQuiz(
+		@RequestHeader("X-Authorization-Id") Long memberId,
+		@RequestParam(required = false) Long categoryId
+	) {
+		Analysis analysis = service.analyzeQuiz(memberId, categoryId);
+		return AnalysisResponse.from(analysis, objectMapper);
 	}
 }
