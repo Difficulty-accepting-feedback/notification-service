@@ -4,17 +4,21 @@ import lombok.Getter;
 
 @Getter
 public class Analysis {
+    private final Long analysisId;
+    private final Long memberId;
+    private final Long categoryId;
+    private final String analysisResult;
 
-    private Long analysisId;
-    private Long memberId; // 멤버 ID
-    private Long categoryId; // 카테고리 ID
-    private String analysisResult; // 분석 결과
-
-    public Analysis(Long memberId,
-                    Long categoryId,
-                    String analysisResult
+    public Analysis(Long memberId, Long categoryId, String analysisResult) {
+        this(null, memberId, categoryId, analysisResult);
+    }
+    public Analysis(
+        Long analysisId,
+        Long memberId,
+        Long categoryId,
+        String analysisResult
     ) {
-        this.analysisId = null;
+        this.analysisId = analysisId;
         this.memberId = memberId;
         this.categoryId = categoryId;
         this.analysisResult = analysisResult;
