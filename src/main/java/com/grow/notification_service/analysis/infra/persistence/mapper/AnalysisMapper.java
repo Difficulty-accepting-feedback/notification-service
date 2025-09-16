@@ -10,19 +10,20 @@ import com.grow.notification_service.analysis.infra.persistence.entity.AnalysisJ
 public class AnalysisMapper {
 
     // 엔티티를 도메인으로
-    public Analysis toDomain(AnalysisJpaEntity entity) {
-        return new Analysis(entity.getMemberId(),
-                entity.getCategoryId(),
-                entity.getAnalysisResult()
-        );
+    public Analysis toDomain(AnalysisJpaEntity e) {
+        return new Analysis(
+            e.getAnalysisId(),
+            e.getMemberId(),
+            e.getCategoryId(),
+            e.getAnalysisResult());
     }
 
     // 도메인을 엔티티로
-    public AnalysisJpaEntity toEntity(Analysis domain) {
+    public AnalysisJpaEntity toEntity(Analysis d) {
         return AnalysisJpaEntity.builder()
-                .memberId(domain.getMemberId())
-                .categoryId(domain.getCategoryId())
-                .analysisResult(domain.getAnalysisResult())
-                .build();
+            .memberId(d.getMemberId())
+            .categoryId(d.getCategoryId())
+            .analysisResult(d.getAnalysisResult())
+            .build();
     }
 }
