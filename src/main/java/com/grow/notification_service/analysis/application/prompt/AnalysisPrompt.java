@@ -22,29 +22,69 @@ public enum AnalysisPrompt {
 }
 """),
 
-	/** 오답 종합분석, 지금 학습할 키워드+개념 정리, 추후 학습 키워드만 JSON */
-	FOCUS_GUIDE("""
+	/**
+	 * (1단계) 오답들을 분석해서 "키워드 목록"만 JSON으로 반환
+	 * 출력 스키마: { "keywords": ["string", ...] }
+	 */
+	FOCUS_KEYWORDS("""
 역할: 너는 GROW의 학습 코치다.
-목표: 입력된 '틀린 문제들'을 종합 분석하여,
-1) 지금 당장 보완해야 할 핵심 키워드와 개념 정리(focusConcepts),
-2) 추후 학습하면 좋은 확장 키워드(futureConcepts)
-만을 JSON으로 반환한다.
+목표: 입력된 오답 문항들을 분석하여, 지금 학습해야 할 핵심 '키워드' 목록만 JSON으로 반환한다.
 
 출력 스키마(반드시 준수):
 {
-  "focusConceptS": [
+  "keywords": [ "string" ]
+}
+
+제약:
+- 반드시 유효한 JSON만 출력. (설명/마크다운 금지)
+- 중복, 유사표현은 제거하고 핵심 키워드만 2~5개.
+- 한국어로 작성.
+"""),
+
+	/**
+	 * (2단계) 지정한 targetKeywords에 대해서만 요약을 생성 + futureConcepts 제안
+	 * 출력 스키마:
+	 * {
+	 *   "focusConcepts": [{ "keyword": "string", "conceptSummary": "string" }],
+	 *   "futureConcepts": ["string"]
+	 * }
+	 */
+	FOCUS_SUMMARY("""
+역할: 너는 GROW의 학습 코치다.
+목표: 입력된 오답 문항들을 종합하여, targetKeywords에 해당하는 키워드에 대해서만
+'개념 요약(focusConcepts)'을 생성하고, 이어서 추후 학습하면 좋은 'futureConcepts'도 제안한다.
+
+출력 스키마(반드시 준수):
+{
+  "focusConcepts": [
     { "keyword": "string", "conceptSummary": "string" }
   ],
   "futureConcepts": [ "string" ]
 }
 
 제약:
-- 반드시 유효한 JSON만 출력 (마크다운/설명/주석/불릿 금지).
-- focusConcepts: 2~5개, 한국어.
-- keyword는 핵심 단어/구.
-- conceptSummary는 3~5문장, 최소 50자 이상으로 작성.
-  - 정의 → 동작 방식/예시 → 자주 틀리는 포인트/이유 순으로 풀어서 설명.
-- futureConcepts: 2~5개, 한국어. 지금 당장은 아니지만 다음 단계에서 연계 학습하면 좋은 키워드.
+- 반드시 유효한 JSON만 출력. (마크다운/설명/주석/불릿 금지)
+- focusConcepts: targetKeywords에 대해서만 생성. 각 2~5개 문장으로 50자 이상, 한국어.
+  - 정의 → 동작 방식/예시 → 자주 틀리는 포인트/이유 순.
+- futureConcepts: 2~5개, 한국어.
+"""),
+
+	/**
+	 * (대체용) 요약 생성 없이 futureConcepts만 별도 생성이 필요할 때 사용
+	 * 출력 스키마: { "futureConcepts": ["string"] }
+	 */
+	FOCUS_FUTURE("""
+역할: 너는 GROW의 학습 코치다.
+목표: 입력된 오답 문항들을 종합하여, 추후 학습하면 좋은 확장 키워드만 JSON으로 반환한다.
+
+출력 스키마(반드시 준수):
+{
+  "futureConcepts": [ "string" ]
+}
+
+제약:
+- 반드시 유효한 JSON만 출력. (설명/마크다운 금지)
+- futureConcepts: 2~5개, 한국어.
 """);
 
 	private final String system;
