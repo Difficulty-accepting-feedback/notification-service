@@ -7,13 +7,17 @@ import com.grow.notification_service.analysis.application.prompt.AnalysisPrompt;
 import com.grow.notification_service.analysis.application.service.AnalysisApplicationService;
 import com.grow.notification_service.analysis.domain.model.Analysis;
 import com.grow.notification_service.analysis.domain.repository.AnalysisRepository;
+import com.grow.notification_service.global.exception.AnalysisException;
+import com.grow.notification_service.global.exception.ErrorCode;
 import com.grow.notification_service.quiz.application.MemberQuizResultPort;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;
 import com.grow.notification_service.analysis.domain.model.KeywordConcept;
 import com.grow.notification_service.analysis.domain.repository.KeywordConceptRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,7 +77,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 
 		// 오답 ID 조회
 		List<Long> wrongIds = memberQuizResultPort.findAnsweredQuizIds(memberId, categoryId, Boolean.FALSE);
-		if (wrongIds == null) wrongIds = List.of();
+		if (wrongIds == null)
+			wrongIds = List.of();
 		log.debug("[ANALYSIS][FOCUS] 오답 ID 조회 완료 - wrongIds={}", wrongIds);
 
 		// 동일 컨텍스트 내 퀴즈 메타 조회(필터 포함)
@@ -211,8 +216,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			log.debug("[ANALYSIS][FOCUS] 최종 JSON 직렬화 완료");
 		} catch (Exception e) {
 			log.error("[ANALYSIS][FOCUS] 분석 결과 직렬화 실패 - memberId={}, categoryId={}, err={}",
-				memberId, categoryId, e.toString(), e);
-			throw new RuntimeException("분석 결과 직렬화 실패", e);
+				memberId, categoryId, e, e);
+			throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
 		}
 
 		Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, finalJson));
@@ -230,7 +235,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	 * @return 정규화된 키워드
 	 */
 	private String normalize(String keyword) {
-		if (keyword == null) return "";
+		if (keyword == null)
+			return "";
 		return keyword.trim().replaceAll("\\s+", " ").toLowerCase();
 	}
 
@@ -245,7 +251,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			List<Map<String, Object>> items = new ArrayList<>();
 			for (Long qid : wrongIds) {
 				Quiz q = byId.get(qid);
-				if (q == null) continue;
+				if (q == null)
+					continue;
 				Map<String, Object> one = new LinkedHashMap<>();
 				one.put("quizId", q.getQuizId());
 				one.put("question", q.getQuestion());
@@ -258,8 +265,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			llmInput.put("items", items);
 			return objectMapper.writeValueAsString(llmInput);
 		} catch (Exception ex) {
-			log.error("[ANALYSIS][FOCUS] LLM 입력 직렬화 실패 - wrongIds={}, err={}", wrongIds, ex.toString(), ex);
-			throw new RuntimeException("LLM 입력 직렬화 실패", ex);
+			log.error("[ANALYSIS][FOCUS] LLM 입력 직렬화 실패 - wrongIds={}, err={}", wrongIds, ex, ex);
+			throw new AnalysisException(ErrorCode.ANALYSIS_INPUT_SERIALIZE_FAILED, ex);
 		}
 	}
 
@@ -270,14 +277,14 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	 */
 	private String buildKeywordsUserPrompt(String itemsJson) {
 		return """
-입력 데이터(JSON):
-%s
+			입력 데이터(JSON):
+			%s
 
-요청:
-- 오답들을 종합 분석하여 지금 학습해야 할 핵심 '키워드'만을 JSON으로 반환하라.
-- 반드시 스키마: { "keywords": ["string"] }
-- 한국어, 중복/유사표현 제거, 2~5개.
-""".formatted(itemsJson);
+			요청:
+			- 오답들을 종합 분석하여 지금 학습해야 할 핵심 '키워드'만을 JSON으로 반환하라.
+			- 반드시 스키마: { "keywords": ["string"] }
+			- 한국어, 중복/유사표현 제거, 2~5개.
+			""".formatted(itemsJson);
 	}
 
 	/**
@@ -293,22 +300,22 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			input.put("targetKeywords", targetKeywords);
 			String payload = objectMapper.writeValueAsString(input);
 			return """
-입력(JSON):
-%s
+				입력(JSON):
+				%s
 
-요청:
-- targetKeywords에 해당하는 키워드에 대해서만 focusConcepts를 생성하고,
-  futureConcepts도 함께 제안하라.
-- 반드시 스키마:
-{
-  "focusConcepts": [{ "keyword": "string", "conceptSummary": "string" }],
-  "futureConcepts": ["string"]
-}
-- conceptSummary는 3~5문장, 최소 50자 이상, 한국어.
-""".formatted(payload);
+				요청:
+				- targetKeywords에 해당하는 키워드에 대해서만 focusConcepts를 생성하고,
+				  futureConcepts도 함께 제안하라.
+				- 반드시 스키마:
+				{
+				  "focusConcepts": [{ "keyword": "string", "conceptSummary": "string" }],
+				  "futureConcepts": ["string"]
+				}
+				- conceptSummary는 3~5문장, 최소 50자 이상, 한국어.
+				""".formatted(payload);
 		} catch (Exception e) {
-			log.error("[ANALYSIS][FOCUS] 요약 요청 직렬화 실패 - targets={}, err={}", targetKeywords, e.toString(), e);
-			throw new RuntimeException("요약 요청 직렬화 실패", e);
+			log.error("[ANALYSIS][FOCUS] 요약 요청 직렬화 실패 - targets={}, err={}", targetKeywords, e, e);
+			throw new AnalysisException(ErrorCode.ANALYSIS_SUMMARY_PROMPT_BUILD_FAILED, e);
 		}
 	}
 
@@ -319,14 +326,14 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	 */
 	private String buildFutureOnlyUserPrompt(String itemsJson) {
 		return """
-입력 데이터(JSON):
-%s
+			입력 데이터(JSON):
+			%s
 
-요청:
-- 추후 학습하면 좋은 확장 키워드만을 JSON으로 반환하라.
-- 반드시 스키마: { "futureConcepts": ["string"] }
-- 한국어, 2~5개.
-""".formatted(itemsJson);
+			요청:
+			- 추후 학습하면 좋은 확장 키워드만을 JSON으로 반환하라.
+			- 반드시 스키마: { "futureConcepts": ["string"] }
+			- 한국어, 2~5개.
+			""".formatted(itemsJson);
 	}
 
 	/**
@@ -338,18 +345,20 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		try {
 			JsonNode root = objectMapper.readTree(json);
 			if (!root.has("keywords") || !root.get("keywords").isArray()) {
-				throw new IllegalStateException("LLM 결과 형식 오류: keywords 배열 누락");
+				throw new AnalysisException(ErrorCode.ANALYSIS_KEYWORDS_PARSE_FAILED);
 			}
 			List<String> keywords = new ArrayList<>();
 			for (JsonNode n : root.get("keywords")) {
 				String k = n.asText("");
-				if (!k.isBlank()) keywords.add(k);
+				if (!k.isBlank())
+					keywords.add(k);
 			}
-			if (keywords.isEmpty()) throw new IllegalStateException("LLM 결과 형식 오류: keywords 비어있음");
+			if (keywords.isEmpty())
+				throw new AnalysisException(ErrorCode.ANALYSIS_KEYWORDS_PARSE_FAILED);
 			return keywords;
 		} catch (Exception e) {
-			log.warn("[ANALYSIS][FOCUS] keywords 파싱 실패 - err={}", e.toString(), e);
-			throw new RuntimeException("LLM 결과 검증 실패 (keywords)", e);
+			log.warn("[ANALYSIS][FOCUS] keywords 파싱 실패 - err={}", e, e);
+			throw new AnalysisException(ErrorCode.ANALYSIS_KEYWORDS_PARSE_FAILED, e);
 		}
 	}
 
@@ -362,28 +371,29 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		try {
 			JsonNode root = objectMapper.readTree(json);
 			if (!root.has("focusConcepts") || !root.get("focusConcepts").isArray()) {
-				throw new IllegalStateException("LLM 결과 형식 오류: focusConcepts 배열 누락");
+				throw new AnalysisException(ErrorCode.ANALYSIS_FOCUS_PARSE_FAILED);
 			}
 			List<Map<String, String>> list = new ArrayList<>();
 			for (JsonNode n : root.get("focusConcepts")) {
 				if (!n.has("keyword") || !n.has("conceptSummary")) {
-					throw new IllegalStateException("LLM 결과 형식 오류: focusConcepts의 필수 필드 누락");
+					throw new AnalysisException(ErrorCode.ANALYSIS_FOCUS_PARSE_FAILED);
 				}
 				String keyword = n.get("keyword").asText("");
 				String summary = n.get("conceptSummary").asText("");
 				if (keyword.isBlank() || summary.isBlank()) {
-					throw new IllegalStateException("LLM 결과 형식 오류: keyword/conceptSummary 비어있음");
+					throw new AnalysisException(ErrorCode.ANALYSIS_FOCUS_PARSE_FAILED);
 				}
 				Map<String, String> row = new LinkedHashMap<>();
 				row.put("keyword", keyword);
 				row.put("conceptSummary", summary);
 				list.add(row);
 			}
-			if (list.isEmpty()) throw new IllegalStateException("LLM 결과 형식 오류: focusConcepts 비어있음");
+			if (list.isEmpty())
+				throw new AnalysisException(ErrorCode.ANALYSIS_FOCUS_PARSE_FAILED);
 			return list;
 		} catch (Exception e) {
-			log.warn("[ANALYSIS][FOCUS] focusConcepts 파싱 실패 - err={}", e.toString(), e);
-			throw new RuntimeException("LLM 결과 검증 실패 (focusConcepts)", e);
+			log.warn("[ANALYSIS][FOCUS] focusConcepts 파싱 실패 - err={}", e, e);
+			throw new AnalysisException(ErrorCode.ANALYSIS_FOCUS_PARSE_FAILED, e);
 		}
 	}
 
@@ -396,18 +406,20 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		try {
 			JsonNode root = objectMapper.readTree(json);
 			if (!root.has("futureConcepts") || !root.get("futureConcepts").isArray()) {
-				throw new IllegalStateException("LLM 결과 형식 오류: futureConcepts 배열 누락");
+				throw new AnalysisException(ErrorCode.ANALYSIS_FUTURE_PARSE_FAILED);
 			}
 			List<String> concepts = new ArrayList<>();
 			for (JsonNode n : root.get("futureConcepts")) {
 				String c = n.asText("");
-				if (!c.isBlank()) concepts.add(c);
+				if (!c.isBlank())
+					concepts.add(c);
 			}
-			if (concepts.isEmpty()) throw new IllegalStateException("LLM 결과 형식 오류: futureConcepts 비어있음");
+			if (concepts.isEmpty())
+				throw new AnalysisException(ErrorCode.ANALYSIS_FUTURE_PARSE_FAILED);
 			return concepts;
 		} catch (Exception e) {
-			log.warn("[ANALYSIS][FOCUS] futureConcepts 파싱 실패 - err={}", e.toString(), e);
-			throw new RuntimeException("LLM 결과 검증 실패 (futureConcepts)", e);
+			log.warn("[ANALYSIS][FOCUS] futureConcepts 파싱 실패 - err={}", e, e);
+			throw new AnalysisException(ErrorCode.ANALYSIS_FUTURE_PARSE_FAILED, e);
 		}
 	}
 }
