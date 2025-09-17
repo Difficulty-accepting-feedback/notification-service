@@ -30,7 +30,16 @@ public enum ErrorCode {
 	UNSUPPORTED_MODE(HttpStatus.BAD_REQUEST, "400-5", "unsupported.mode"),
 	QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "404-3", "quiz.not.found"),
 	CATEGORY_MISMATCH(HttpStatus.BAD_REQUEST, "400-6", "category.mismatch"),
-	NOT_ENOUGH_HISTORY(HttpStatus.BAD_REQUEST, "400-7", "not.enough.history"),;
+	NOT_ENOUGH_HISTORY(HttpStatus.BAD_REQUEST, "400-7", "not.enough.history"),
+
+	// 분석
+	ANALYSIS_INPUT_SERIALIZE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-2", "analysis.input.serialize.failed"),
+	ANALYSIS_SUMMARY_PROMPT_BUILD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-3", "analysis.summary.prompt.build.failed"),
+	ANALYSIS_KEYWORDS_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-4", "analysis.keywords.parse.failed"),
+	ANALYSIS_FOCUS_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-5", "analysis.focus.parse.failed"),
+	ANALYSIS_FUTURE_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-6", "analysis.future.parse.failed"),
+	ANALYSIS_OUTPUT_SERIALIZE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-7", "analysis.output.serialize.failed"),
+	ANALYSIS_LLM_CALL_FAILED(HttpStatus.BAD_GATEWAY, "502-0", "analysis.llm.call.failed"),;
 
 	private final HttpStatus status;
 	private final String code;
