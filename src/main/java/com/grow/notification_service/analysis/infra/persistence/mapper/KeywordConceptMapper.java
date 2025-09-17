@@ -18,10 +18,11 @@ public class KeywordConceptMapper {
 	}
 
 	public KeywordConceptJpaEntity toEntity(KeywordConcept d) {
-		return new KeywordConceptJpaEntity(
-			d.getKeywordNormalized(),
-			d.getKeywordOriginal(),
-			d.getConceptSummary()
-		);
+		if (d == null) return null;
+		return KeywordConceptJpaEntity.builder()
+			.keywordNormalized(d.getKeywordNormalized())
+			.keywordOriginal(d.getKeywordOriginal())
+			.conceptSummary(d.getConceptSummary())
+			.build();
 	}
 }
