@@ -52,14 +52,29 @@ public class KeywordConceptRepositoryImpl implements KeywordConceptRepository {
 	 */
 	@Override
 	public KeywordConcept upsert(KeywordConcept concept) {
-		try {
-			KeywordConceptJpaEntity saved = jpa.save(mapper.toEntity(concept));
-			return mapper.toDomain(saved);
-		} catch (DataIntegrityViolationException e) {
-			// 동시성 충돌 시 재조회
-			return jpa.findByKeywordNormalized(concept.getKeywordNormalized())
-				.map(mapper::toDomain)
-				.orElseThrow(() -> e);
-		}
+		return jpa.findByKeywordNormalized(concept.getKeywordNormalized())
+			.map(existing -> {
+				KeywordConceptJpaEntity updated = KeywordConceptJpaEntity.builder()
+					.keywordId(existing.getKeywordId())
+					.keywordNormalized(existing.getKeywordNormalized())
+					.keywordOriginal(concept.getKeywordOriginal())
+					.conceptSummary(concept.getConceptSummary())
+					.version(existing.getVersion())
+					.build();
+
+				KeywordConceptJpaEntity saved = jpa.save(updated);      // ← merge + @Version 체크
+				return mapper.toDomain(saved);
+			})
+			.orElseGet(() -> {
+				// 없는 경우 INSERT 동시 INSERT 경합 대비해 UNIQUE 충돌 시 재조회로 복구
+				try {
+					KeywordConceptJpaEntity saved = jpa.save(mapper.toEntity(concept));
+					return mapper.toDomain(saved);
+				} catch (org.springframework.dao.DataIntegrityViolationException e) {
+					return jpa.findByKeywordNormalized(concept.getKeywordNormalized())
+						.map(mapper::toDomain)
+						.orElseThrow(() -> e);
+				}
+			});
 	}
 }

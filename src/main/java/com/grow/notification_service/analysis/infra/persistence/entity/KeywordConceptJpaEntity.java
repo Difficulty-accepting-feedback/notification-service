@@ -8,6 +8,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -15,7 +18,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "keyword_concept",
 	uniqueConstraints = @UniqueConstraint(name = "uq_keyword_concept", columnNames = "keyword_normalized"))
 @Getter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class KeywordConceptJpaEntity {
 
 	@Id
@@ -32,9 +37,7 @@ public class KeywordConceptJpaEntity {
 	@Column(name = "concept_summary", nullable = false)
 	private String conceptSummary;
 
-	public KeywordConceptJpaEntity(String keywordNormalized, String keywordOriginal, String conceptSummary) {
-		this.keywordNormalized = keywordNormalized;
-		this.keywordOriginal = keywordOriginal;
-		this.conceptSummary = conceptSummary;
-	}
+	@Version
+	@Column(name = "version", nullable = false)
+	private Long version;
 }
