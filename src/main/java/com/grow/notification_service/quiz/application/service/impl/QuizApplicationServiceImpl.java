@@ -9,10 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.grow.notification_service.global.exception.ErrorCode;
 import com.grow.notification_service.global.exception.QuizException;
-import com.grow.notification_service.quiz.application.MemberQuizResultPort;
+import com.grow.notification_service.quiz.application.event.AiReviewRequestedProducer;
+import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.application.dto.QuizItem;
 import com.grow.notification_service.quiz.application.event.QuizAnsweredProducer;
 import com.grow.notification_service.quiz.application.mapping.SkillTagToCategoryRegistry;
+import com.grow.notification_service.quiz.application.port.SubscriptionPort;
 import com.grow.notification_service.quiz.application.service.QuizApplicationService;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;
@@ -35,6 +37,7 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 	private final MemberQuizResultPort memberResultPort;
 	private final QuizRepository quizRepository;
 	private final QuizAnsweredProducer eventPublisher;
+	private final AiReviewRequestedProducer aiReviewRequestedProducer;
 
 	private final QuizReviewService reviewService = new QuizReviewService();
 	/**
@@ -105,6 +108,7 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 
 		// 정답 처리
 		int correct = 0;
+		boolean anyWrong = false;
 
 		// 결과 리스트
 		List<SubmitAnswerResult> results = new java.util.ArrayList<>();
@@ -125,7 +129,7 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 
 			// 정답 여부 판단
 			boolean ok = quiz.isCorrect(item.answer());
-			if (ok) correct++;
+			if (ok) correct++; else anyWrong = true;
 
 			// 결과 저장
 			results.add(new SubmitAnswerResult(
@@ -152,6 +156,23 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 			} catch (Exception e) {
 				log.warn("[QUIZ][알림][발행실패] memberId={}, quizId={}, err={}",
 					memberId, quiz.getQuizId(), e.toString(), e);
+			}
+		}
+
+		// 오답이 하나라도 있었다면, 이번 제출에 대해 단 1회만 ai-review 요청 발행
+		if (anyWrong) {
+			try {
+				aiReviewRequestedProducer.publish(
+					memberId,
+					categoryId,
+					req.mode(),
+					null,
+					null
+				);
+				log.info("[AI-REVIEW][REQUESTED][PUBLISHED] memberId={}, categoryId={}", memberId, categoryId);
+			} catch (Exception e) {
+				log.warn("[AI-REVIEW][REQUESTED][FAIL] memberId={}, categoryId={}, err={}",
+					memberId, categoryId, e.toString(), e);
 			}
 		}
 

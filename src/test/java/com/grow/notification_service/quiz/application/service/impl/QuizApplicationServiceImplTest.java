@@ -2,7 +2,7 @@ package com.grow.notification_service.quiz.application.service.impl;
 
 import com.grow.notification_service.global.exception.ErrorCode;
 import com.grow.notification_service.global.exception.QuizException;
-import com.grow.notification_service.quiz.application.MemberQuizResultPort;
+import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.application.dto.QuizItem;
 import com.grow.notification_service.quiz.application.event.QuizAnsweredProducer;
 import com.grow.notification_service.quiz.application.mapping.SkillTagToCategoryRegistry;
