@@ -39,7 +39,11 @@ public enum ErrorCode {
 	ANALYSIS_FOCUS_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-5", "analysis.focus.parse.failed"),
 	ANALYSIS_FUTURE_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-6", "analysis.future.parse.failed"),
 	ANALYSIS_OUTPUT_SERIALIZE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-7", "analysis.output.serialize.failed"),
-	ANALYSIS_LLM_CALL_FAILED(HttpStatus.BAD_GATEWAY, "502-0", "analysis.llm.call.failed"),;
+	ANALYSIS_LLM_CALL_FAILED(HttpStatus.BAD_GATEWAY, "502-0", "analysis.llm.call.failed"),
+	ANALYSIS_QUIZ_GENERATION_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-8", "analysis.quiz.generation.parse.failed"),
+	ANALYSIS_REQUIRED_FIELD_MISSING(HttpStatus.INTERNAL_SERVER_ERROR, "500-9", "analysis.required.field.missing"),
+	ANALYSIS_INVALID_FIELD_VALUE(HttpStatus.INTERNAL_SERVER_ERROR, "500-10", "analysis.invalid.field.value"),
+	ANALYSIS_UNEXPECTED_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-11", "analysis.unexpected.failed"),;
 
 	private final HttpStatus status;
 	private final String code;
