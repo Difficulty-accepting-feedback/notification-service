@@ -1,4 +1,4 @@
-package com.grow.notification_service.quiz.application;
+package com.grow.notification_service.quiz.application.port;
 
 import java.util.List;
 

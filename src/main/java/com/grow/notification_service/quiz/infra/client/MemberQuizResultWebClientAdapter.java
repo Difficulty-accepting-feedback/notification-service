@@ -1,6 +1,6 @@
 package com.grow.notification_service.quiz.infra.client;
 
-import com.grow.notification_service.quiz.application.MemberQuizResultPort;
+import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.global.exception.ErrorCode;
 import com.grow.notification_service.global.exception.QuizException;
 
