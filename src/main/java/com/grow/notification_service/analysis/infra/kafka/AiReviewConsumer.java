@@ -3,6 +3,8 @@ package com.grow.notification_service.analysis.infra.kafka;
 import java.time.Duration;
 import java.util.List;
 
+import com.grow.notification_service.analysis.infra.persistence.entity.MemberLatestAiReviewJpaEntity;
+import com.grow.notification_service.analysis.infra.persistence.repository.MemberLatestAiReviewJpaRepository;
 import com.grow.notification_service.global.util.JsonUtils;
 import com.grow.notification_service.analysis.application.service.QuizGenerationApplicationService;
 import com.grow.notification_service.quiz.application.event.AiReviewRequestedEvent;
@@ -27,6 +29,7 @@ public class AiReviewConsumer {
 	private final SubscriptionPort subscriptionPort;
 	private final QuizGenerationApplicationService quizGen;
 	private final StringRedisTemplate redis;
+	private final MemberLatestAiReviewJpaRepository latestRepo;
 
 	private static final Duration DEDUPE_TTL = Duration.ofMinutes(10); // 10분 내 중복 요청 차단
 
@@ -72,6 +75,21 @@ public class AiReviewConsumer {
 			);
 			log.info("[AI-REVIEW][GEN][END] memberId={}, categoryId={}, saved={}",
 				evt.memberId(), evt.categoryId(), saved.size());
+
+			// 방금 생성된 퀴즈 저장
+			List<Long> ids = saved.stream()
+				.map(Quiz::getQuizId)
+				.toList();
+
+			MemberLatestAiReviewJpaEntity row = MemberLatestAiReviewJpaEntity.builder()
+				.memberId(evt.memberId())
+				.categoryId(evt.categoryId())
+				.quizIdsJson(JsonUtils.toJsonString(ids))
+				.updatedAt(java.time.LocalDateTime.now())
+				.build();
+
+			latestRepo.save(row);
+			log.info("[AI-REVIEW][QUIZ][SAVE} AI 생성 퀴즈 저장 완료");
 
 		} catch (Exception e) {
 			log.error("[KAFKA][AI-REVIEW-WORKER][ERROR] payload={}", payload, e);
