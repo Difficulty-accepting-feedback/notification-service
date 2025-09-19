@@ -227,6 +227,126 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		return saved;
 	}
 
+	/**
+	 * 선택된 퀴즈 ID 기반 학습 가이드 생성
+	 *
+	 * @param memberId   멤버 ID
+	 * @param categoryId 카테고리 ID
+	 * @param quizIds    선택된 퀴즈 ID 목록
+	 */
+	@Override
+	@Transactional
+	public void analyzeFromQuizIds(Long memberId, Long categoryId, List<Long> quizIds) {
+		log.info("[ANALYSIS][FOCUS-SELECTED][START] memberId={}, categoryId={}, ids={}",
+			memberId, categoryId, quizIds);
+		// 입력 비었으면 아무 것도 하지 않고 종료
+		if (quizIds == null || quizIds.isEmpty()) {
+			log.debug("[ANALYSIS][FOCUS-SELECTED][SKIP] empty quizIds - memberId={}, categoryId={}",
+				memberId, categoryId);
+			return;
+		}
+
+
+		// 1) 퀴즈 조회(선택된 id만)
+		List<Quiz> selected = quizRepository.findByIds(quizIds);
+		Map<Long, Quiz> byId = selected.stream().collect(Collectors.toMap(Quiz::getQuizId, q -> q));
+
+		// 카테고리 필터링
+		List<Long> filtered = quizIds.stream()
+			.filter(id -> byId.containsKey(id) && Objects.equals(byId.get(id).getCategoryId(), categoryId))
+			.toList();
+
+		// 2) LLM 입력 JSON 구성
+		String itemsJson = buildItemsJson(byId, filtered);
+
+		// 3) 키워드 추출
+		String kwUser = buildKeywordsUserPrompt(itemsJson);
+		String kwSystem = AnalysisPrompt.FOCUS_KEYWORDS.getSystem();
+		String kwJson = llmClient.generateJson(kwSystem, kwUser);
+		List<String> keywords = parseKeywords(kwJson);
+
+		// 4) 정규화 + 중복 제거
+		LinkedHashMap<String, String> normToOriginal = new LinkedHashMap<>();
+		for (String k : keywords) {
+			String norm = normalize(k);
+			if (!norm.isBlank() && !normToOriginal.containsKey(norm)) {
+				normToOriginal.put(norm, k);
+			}
+		}
+		Set<String> normKeys = normToOriginal.keySet();
+		Map<String, KeywordConcept> existing = keywordConceptRepository.findByKeywordNormalizedIn(normKeys);
+
+		// 5) 미스만 요약 생성
+		List<String> missingNorm = normKeys.stream().filter(n -> !existing.containsKey(n)).toList();
+
+		List<Map<String, String>> newFocus = new ArrayList<>();
+		List<String> futureConcepts;
+
+		if (!missingNorm.isEmpty()) {
+			// 미보유 키워드에 대해서만 요약 생성
+			List<String> targets = missingNorm.stream().map(normToOriginal::get).toList();
+			String sumUser = buildSummaryUserPrompt(itemsJson, targets);
+			String sumSystem = AnalysisPrompt.FOCUS_SUMMARY.getSystem();
+			String sumJson = llmClient.generateJson(sumSystem, sumUser);
+
+			// 신규 focusConcepts 파싱 + 저장
+			List<Map<String, String>> focusConceptsNewOnly = parseFocusConcepts(sumJson);
+
+			int upserted = 0;
+			for (Map<String, String> fc : focusConceptsNewOnly) {
+				String original = fc.get("keyword");
+				String summary  = fc.get("conceptSummary");
+				String norm = normalize(original);
+				try {
+					KeywordConcept saved = keywordConceptRepository.upsert(
+						new KeywordConcept(norm, original, summary)
+					);
+					existing.put(norm, saved);
+					newFocus.add(Map.of("keyword", saved.getKeywordOriginal(),
+						"conceptSummary", saved.getConceptSummary()));
+					upserted++;
+				} catch (DataIntegrityViolationException dup) {
+					keywordConceptRepository.findByKeywordNormalized(norm)
+						.ifPresent(found -> existing.put(norm, found));
+				}
+			}
+			futureConcepts = parseFutureConcepts(sumJson);
+			log.info("[ANALYSIS][FOCUS-SELECTED] upserted={}, future={}", upserted, futureConcepts.size());
+		} else {
+			String futUser = buildFutureOnlyUserPrompt(itemsJson);
+			String futSystem = AnalysisPrompt.FOCUS_FUTURE.getSystem();
+			String futJson = llmClient.generateJson(futSystem, futUser);
+			futureConcepts = parseFutureConcepts(futJson);
+		}
+
+		// 6) 최종 merge + 분석 소스 메타 포함 저장
+		List<Map<String, String>> mergedFocus = new ArrayList<>();
+		for (String n : normKeys) {
+			KeywordConcept c = existing.get(n);
+			if (c != null) {
+				mergedFocus.add(Map.of("keyword", c.getKeywordOriginal(),
+					"conceptSummary", c.getConceptSummary()));
+			}
+		}
+
+		Map<String, Object> out = new LinkedHashMap<>();
+		out.put("memberId", memberId);
+		out.put("categoryId", categoryId);
+		out.put("source", "latest");
+		out.put("usedQuizIds", filtered);
+		out.put("focusConcepts", mergedFocus);
+		out.put("futureConcepts", futureConcepts);
+
+		try {
+			String finalJson = objectMapper.writeValueAsString(out);
+			Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, finalJson));
+			log.info("[ANALYSIS][FOCUS-SELECTED][END] saved analysisId={}, focus={}, future={}",
+				saved.getAnalysisId(), mergedFocus.size(), futureConcepts.size());
+		} catch (Exception e) {
+			throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
+		}
+	}
+
 	// 헬퍼 메서드
 
 	/**
