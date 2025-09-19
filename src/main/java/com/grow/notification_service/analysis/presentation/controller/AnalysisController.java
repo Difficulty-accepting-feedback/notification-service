@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grow.notification_service.analysis.application.service.AiReviewAnalysisTrigger;
 import com.grow.notification_service.analysis.application.service.AiReviewQueryService;
 import com.grow.notification_service.analysis.application.service.AnalysisApplicationService;
 import com.grow.notification_service.analysis.application.service.QuizGenerationApplicationService;
@@ -32,6 +33,7 @@ public class AnalysisController {
 	private final QuizGenerationApplicationService quizService;
 	private final ObjectMapper objectMapper;
 	private final AiReviewQueryService aiReviewQueryService;
+	private final AiReviewAnalysisTrigger aiReviewAnalysisTrigger;
 
 	/**
 	 * 자바 프로그래밍 학습 로드맵 분석 요청 (테스트용입니다)
@@ -86,14 +88,25 @@ public class AnalysisController {
 		return created.stream().map(QuizResponse::from).toList();
 	}
 
-	/** 최근 생성된 AI 복습 퀴즈 조회 */
+	/** 최근 생성된 AI 복습 퀴즈 조회 (응답 즉시) + 분석은 응답 후 비동기 */
 	@GetMapping("/latest")
 	public ResponseEntity<RsData<List<QuizItem>>> getLatest(
 		@RequestHeader("X-Authorization-Id") Long memberId,
 		@RequestParam("categoryId") Long categoryId,
 		@RequestParam(value = "size", required = false) Integer size
 	) {
-		List<QuizItem> items = aiReviewQueryService.getLatestGenerated(memberId, categoryId, size);
-		return ResponseEntity.ok(new RsData<>("200", "AI 복습 퀴즈 조회 성공", items));
+		final int want = (size == null || size <= 0) ? 5 : size;
+
+		// 먼저 조회
+		List<QuizItem> items = aiReviewQueryService.getLatestGenerated(memberId, categoryId, want);
+
+		// 응답은 바로 반환
+		ResponseEntity<RsData<List<QuizItem>>> response =
+			ResponseEntity.ok(new RsData<>("200", "AI 복습 퀴즈 조회 성공", items));
+
+		// 비동기 분석 트리거 (응답 반환 후 별도 스레드에서 실행)
+		aiReviewAnalysisTrigger.triggerAfterResponse(memberId, categoryId, items);
+
+		return response;
 	}
 }
