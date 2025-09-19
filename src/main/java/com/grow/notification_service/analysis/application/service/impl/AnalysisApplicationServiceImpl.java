@@ -9,6 +9,7 @@ import com.grow.notification_service.analysis.domain.model.Analysis;
 import com.grow.notification_service.analysis.domain.repository.AnalysisRepository;
 import com.grow.notification_service.global.exception.AnalysisException;
 import com.grow.notification_service.global.exception.ErrorCode;
+import com.grow.notification_service.global.util.SignatureUtils;
 import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;
@@ -246,7 +247,6 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			return;
 		}
 
-
 		// 1) 퀴즈 조회(선택된 id만)
 		List<Quiz> selected = quizRepository.findByIds(quizIds);
 		Map<Long, Quiz> byId = selected.stream().collect(Collectors.toMap(Quiz::getQuizId, q -> q));
@@ -255,6 +255,12 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		List<Long> filtered = quizIds.stream()
 			.filter(id -> byId.containsKey(id) && Objects.equals(byId.get(id).getCategoryId(), categoryId))
 			.toList();
+
+		// 필터 결과가 비면 저장 없이 종료
+		if (filtered.isEmpty()) {
+			log.debug("[ANALYSIS][FOCUS-SELECTED][SKIP] filtered empty - mid={}, cid={}", memberId, categoryId);
+			return;
+		}
 
 		// 2) LLM 입력 JSON 구성
 		String itemsJson = buildItemsJson(byId, filtered);
@@ -311,7 +317,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 				}
 			}
 			futureConcepts = parseFutureConcepts(sumJson);
-			log.info("[ANALYSIS][FOCUS-SELECTED] upserted={}, future={}", upserted, futureConcepts.size());
+			log.info("[ANALYSIS][FOCUS-SELECTED] upserted={}, newFocus={}", upserted, newFocus.size());
 		} else {
 			String futUser = buildFutureOnlyUserPrompt(itemsJson);
 			String futSystem = AnalysisPrompt.FOCUS_FUTURE.getSystem();
@@ -319,7 +325,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			futureConcepts = parseFutureConcepts(futJson);
 		}
 
-		// 6) 최종 merge + 분석 소스 메타 포함 저장
+		// 6) 최종 merge
 		List<Map<String, String>> mergedFocus = new ArrayList<>();
 		for (String n : normKeys) {
 			KeywordConcept c = existing.get(n);
@@ -329,10 +335,14 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			}
 		}
 
+		// 7)  시그니처 생성 + 메타 포함하여 JSON 직렬화 후 저장
+		String signature = SignatureUtils.ofQuizIds(filtered);
+
 		Map<String, Object> out = new LinkedHashMap<>();
 		out.put("memberId", memberId);
 		out.put("categoryId", categoryId);
 		out.put("source", "latest");
+		out.put("signature", signature);
 		out.put("usedQuizIds", filtered);
 		out.put("focusConcepts", mergedFocus);
 		out.put("futureConcepts", futureConcepts);
@@ -340,8 +350,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		try {
 			String finalJson = objectMapper.writeValueAsString(out);
 			Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, finalJson));
-			log.info("[ANALYSIS][FOCUS-SELECTED][END] saved analysisId={}, focus={}, future={}",
-				saved.getAnalysisId(), mergedFocus.size(), futureConcepts.size());
+			log.info("[ANALYSIS][FOCUS-SELECTED][END] saved analysisId={}, focus={}, future={}, sig={}",
+				saved.getAnalysisId(), mergedFocus.size(), futureConcepts.size(), signature);
 		} catch (Exception e) {
 			throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
 		}
