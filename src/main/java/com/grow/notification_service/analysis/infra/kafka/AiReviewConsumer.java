@@ -49,6 +49,7 @@ public class AiReviewConsumer {
 		autoCreateTopics = "true"
 	)
 	public void onMessage(@Payload String payload) {
+		String key = null;
 		try {
 			AiReviewRequestedEvent evt = JsonUtils.fromJsonString(payload, AiReviewRequestedEvent.class);
 
@@ -59,7 +60,7 @@ public class AiReviewConsumer {
 			}
 
 			// 중복 방지
-			String key = (evt.dedupeKey() != null && !evt.dedupeKey().isBlank())
+			key = (evt.dedupeKey() != null && !evt.dedupeKey().isBlank())
 				? evt.dedupeKey()
 				: "ai-review:req:%d:%d".formatted(evt.memberId(), evt.categoryId());
 
@@ -92,6 +93,14 @@ public class AiReviewConsumer {
 			log.info("[AI-REVIEW][QUIZ][SAVE} AI 생성 퀴즈 저장 완료");
 
 		} catch (Exception e) {
+			// 재시도 가능하도록 멱등 키 롤백
+			if (key != null) {
+				try {
+					redis.delete(key);
+				} catch (Exception ignore) {
+					log.warn("[AI-REVIEW][DEDUPE][ROLLBACK_FAIL] key={}", key, ignore);
+				}
+			}
 			log.error("[KAFKA][AI-REVIEW-WORKER][ERROR] payload={}", payload, e);
 			throw e;
 		}
