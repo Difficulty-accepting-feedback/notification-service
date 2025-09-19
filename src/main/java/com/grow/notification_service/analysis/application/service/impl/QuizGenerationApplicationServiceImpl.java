@@ -19,7 +19,7 @@ import com.grow.notification_service.analysis.application.prompt.QuizPrompt;
 import com.grow.notification_service.analysis.application.service.QuizGenerationApplicationService;
 import com.grow.notification_service.global.exception.AnalysisException;
 import com.grow.notification_service.global.exception.ErrorCode;
-import com.grow.notification_service.quiz.application.MemberQuizResultPort;
+import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.application.mapping.SkillTagToCategoryRegistry;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;

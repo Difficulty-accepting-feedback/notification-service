@@ -138,6 +138,9 @@ dependencies {
 
 	// 제미나이 AI
 	implementation "com.google.genai:google-genai:1.16.0"
+
+	// redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 tasks.named('test') {

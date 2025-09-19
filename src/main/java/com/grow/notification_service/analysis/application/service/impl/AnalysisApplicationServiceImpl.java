@@ -9,7 +9,7 @@ import com.grow.notification_service.analysis.domain.model.Analysis;
 import com.grow.notification_service.analysis.domain.repository.AnalysisRepository;
 import com.grow.notification_service.global.exception.AnalysisException;
 import com.grow.notification_service.global.exception.ErrorCode;
-import com.grow.notification_service.quiz.application.MemberQuizResultPort;
+import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;
 import com.grow.notification_service.analysis.domain.model.KeywordConcept;

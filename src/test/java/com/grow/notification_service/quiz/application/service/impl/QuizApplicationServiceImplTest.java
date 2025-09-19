@@ -2,10 +2,11 @@ package com.grow.notification_service.quiz.application.service.impl;
 
 import com.grow.notification_service.global.exception.ErrorCode;
 import com.grow.notification_service.global.exception.QuizException;
-import com.grow.notification_service.quiz.application.MemberQuizResultPort;
 import com.grow.notification_service.quiz.application.dto.QuizItem;
+import com.grow.notification_service.quiz.application.event.AiReviewRequestedProducer;
 import com.grow.notification_service.quiz.application.event.QuizAnsweredProducer;
 import com.grow.notification_service.quiz.application.mapping.SkillTagToCategoryRegistry;
+import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.application.service.QuizApplicationService;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;
@@ -13,12 +14,11 @@ import com.grow.notification_service.quiz.infra.persistence.enums.QuizLevel;
 import com.grow.notification_service.quiz.presentation.dto.SubmitAnswerItem;
 import com.grow.notification_service.quiz.presentation.dto.SubmitAnswersRequest;
 import com.grow.notification_service.quiz.presentation.dto.SubmitAnswersResponse;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 
@@ -37,15 +37,23 @@ class QuizApplicationServiceImplTest {
 	@Mock private MemberQuizResultPort memberResultPort;
 	@Mock private QuizRepository quizRepository;
 	@Mock private QuizAnsweredProducer eventPublisher;
+	@Mock private AiReviewRequestedProducer aiReviewRequestedProducer;
 
 	private QuizApplicationService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new QuizApplicationServiceImpl(registry, memberResultPort, quizRepository, eventPublisher);
+		service = new QuizApplicationServiceImpl(
+			registry,
+			memberResultPort,
+			quizRepository,
+			eventPublisher,
+			aiReviewRequestedProducer
+		);
 	}
 
 	private Quiz makeQuiz(Long id, Long categoryId, QuizLevel level, String answer) {
+		// 선택지는 4개가 일반적이지만, 도메인 제약이 없다면 3개여도 테스트엔 문제 없음.
 		return new Quiz(
 			id,
 			"Q" + id,
@@ -127,7 +135,7 @@ class QuizApplicationServiceImplTest {
 	class SubmitAnswers {
 
 		@Test
-		@DisplayName("정상: 2개 제출, 1개 정답 → 이벤트 2건 발행")
+		@DisplayName("정상: 2개 제출, 1개 정답 → 정답/오답 이벤트 2건 + AI 리뷰 요청 1건")
 		void success_submit_two_items() {
 			Long memberId = 77L;
 			String skillTag = "JAVA_PROGRAMMING";
@@ -148,8 +156,13 @@ class QuizApplicationServiceImplTest {
 			assertEquals(1, resp.correctCount());
 			assertEquals(2, resp.results().size());
 
+			// 퀴즈 정답 제출 이벤트(문항별) 2건
 			verify(eventPublisher, times(2))
 				.publish(eq(memberId), anyLong(), eq(10L), anyString(), anyString(), anyBoolean());
+
+			// 오답이 하나라도 있었으므로 AI 리뷰 요청 1건
+			verify(aiReviewRequestedProducer, times(1))
+				.publish(eq(memberId), eq(10L), eq("NORMAL"), isNull(), isNull());
 		}
 
 		@Test
@@ -160,7 +173,9 @@ class QuizApplicationServiceImplTest {
 			SubmitAnswersRequest req = new SubmitAnswersRequest("NOPE", "EASY",
 				List.of(new SubmitAnswerItem(1L, "A")));
 			assertThrows(QuizException.class, () -> service.submitAnswers(1L, req));
+
 			verify(eventPublisher, never()).publish(anyLong(), anyLong(), anyLong(), anyString(), anyString(), anyBoolean());
+			verify(aiReviewRequestedProducer, never()).publish(anyLong(), anyLong(), anyString(), any(), any());
 		}
 
 		@Test
@@ -173,7 +188,9 @@ class QuizApplicationServiceImplTest {
 				List.of(new SubmitAnswerItem(999L, "A")));
 
 			assertThrows(QuizException.class, () -> service.submitAnswers(1L, req));
+
 			verify(eventPublisher, never()).publish(anyLong(), anyLong(), anyLong(), anyString(), anyString(), anyBoolean());
+			verify(aiReviewRequestedProducer, never()).publish(anyLong(), anyLong(), anyString(), any(), any());
 		}
 
 		@Test
@@ -187,11 +204,13 @@ class QuizApplicationServiceImplTest {
 				List.of(new SubmitAnswerItem(1L, "A")));
 
 			assertThrows(QuizException.class, () -> service.submitAnswers(1L, req));
+
 			verify(eventPublisher, never()).publish(anyLong(), anyLong(), anyLong(), anyString(), anyString(), anyBoolean());
+			verify(aiReviewRequestedProducer, never()).publish(anyLong(), anyLong(), anyString(), any(), any());
 		}
 
 		@Test
-		@DisplayName("정상: 모두 오답이어도 이벤트는 발행된다")
+		@DisplayName("정상: 모두 오답이어도 이벤트는 2건 + AI 리뷰 요청 1건")
 		void success_all_wrong_still_publish_events() {
 			when(registry.resolveOrThrow("JAVA_PROGRAMMING")).thenReturn(10L);
 			Quiz q1 = makeQuiz(1L, 10L, QuizLevel.EASY, "A");
@@ -206,8 +225,13 @@ class QuizApplicationServiceImplTest {
 
 			assertEquals(2, resp.total());
 			assertEquals(0, resp.correctCount());
+
 			verify(eventPublisher, times(2))
 				.publish(eq(123L), anyLong(), eq(10L), anyString(), anyString(), eq(false));
+
+			// 오답 포함 → AI 리뷰 요청은 1회
+			verify(aiReviewRequestedProducer, times(1))
+				.publish(eq(123L), eq(10L), eq("EASY"), isNull(), isNull());
 		}
 	}
 
@@ -229,7 +253,7 @@ class QuizApplicationServiceImplTest {
 			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, false)).thenReturn(wrongIds);
 			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, true)).thenReturn(correctIds);
 
-			// historyInCategory (unionIds = 7개) 정확 매칭
+			// historyInCategory (unionIds = 7개)
 			List<Long> unionIds = List.of(1L,2L,3L,4L,5L,6L,7L);
 			List<Quiz> historyQuizzes = unionIds.stream()
 				.map(id -> makeQuiz(id, categoryId, QuizLevel.EASY, "A"))
@@ -241,7 +265,7 @@ class QuizApplicationServiceImplTest {
 				any(PageRequest.class))
 			).thenReturn(historyQuizzes);
 
-			// 1) wrong 3개 (wrongIds 정확 매칭)
+			// 1) wrong 3개
 			List<Quiz> fromWrong = List.of(
 				makeQuiz(1L, categoryId, QuizLevel.EASY, "A"),
 				makeQuiz(2L, categoryId, QuizLevel.EASY, "A"),
@@ -254,7 +278,7 @@ class QuizApplicationServiceImplTest {
 				any(PageRequest.class))
 			).thenReturn(fromWrong);
 
-			// 2) correct 2개 (correctIds 풀만 매칭되도록 사이즈 조건 추가)
+			// 2) correct 2개
 			List<Quiz> fromCorrect = List.of(
 				makeQuiz(5L, categoryId, QuizLevel.NORMAL, "B"),
 				makeQuiz(6L, categoryId, QuizLevel.NORMAL, "B")
@@ -287,7 +311,7 @@ class QuizApplicationServiceImplTest {
 			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, false)).thenReturn(List.of(1L, 2L));
 			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, true)).thenReturn(List.of(3L, 4L));
 
-			// historyInCategory 결과도 4개로 귀결되도록 stub
+			// historyInCategory 4개로 세팅
 			List<Long> unionIds = List.of(1L,2L,3L,4L);
 			List<Quiz> historyQuizzes = unionIds.stream()
 				.map(id -> makeQuiz(id, categoryId, QuizLevel.EASY, "A"))
@@ -311,13 +335,12 @@ class QuizApplicationServiceImplTest {
 
 			when(registry.resolveOrThrow(skillTag)).thenReturn(categoryId);
 
-			// 틀린 1개, 맞은 5개 → unionIds = 6개 >= 5 (최소 이력 충족)
+			// 틀린 1개, 맞은 5개 → unionIds = 6개 (최소 이력 충족)
 			List<Long> wrongIds = List.of(1L);
 			List<Long> correctIds = List.of(9L, 10L, 11L, 12L, 13L);
 			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, false)).thenReturn(wrongIds);
 			when(memberResultPort.findAnsweredQuizIds(memberId, categoryId, true)).thenReturn(correctIds);
 
-			// historyInCategory는 unionIds 전체가 반환되도록 정확 매칭
 			List<Long> unionIds = new java.util.ArrayList<>();
 			unionIds.addAll(wrongIds);
 			unionIds.addAll(correctIds);
@@ -332,7 +355,7 @@ class QuizApplicationServiceImplTest {
 			).thenReturn(historyQuizzes);
 
 			// total=5, wrongRatio=0.6 → wrongNeed=3, correctNeed=2
-			// 1) 틀린에서 1개만 뽑힘(부족)
+			// 1) 틀린에서 1개만
 			List<Quiz> fromWrong = List.of(makeQuiz(1L, categoryId, QuizLevel.NORMAL, "C"));
 			when(quizRepository.pickFromIncludeIds(
 				eq(categoryId),
@@ -355,7 +378,7 @@ class QuizApplicationServiceImplTest {
 				any(PageRequest.class))
 			).thenReturn(fromCorrect);
 
-			// 3) 랜덤 보충 2개(총 5개 맞추기)
+			// 3) 랜덤 보충 2개
 			List<Quiz> fills = List.of(
 				makeQuiz(101L, categoryId, QuizLevel.EASY, "A"),
 				makeQuiz(102L, categoryId, QuizLevel.EASY, "A")
@@ -377,8 +400,6 @@ class QuizApplicationServiceImplTest {
 			);
 			verify(quizRepository).pickFillRandomExcluding(eq(categoryId), isNull(), anyList(), any(PageRequest.class));
 		}
-
-
 
 		@Test
 		@DisplayName("에러: 지원하지 않는 모드이면 QuizException (복습)")
