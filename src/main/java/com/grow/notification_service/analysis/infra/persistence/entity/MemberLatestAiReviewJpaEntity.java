@@ -7,19 +7,17 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * 회원별 최신 AI 리뷰 기록 엔티티
  */
 @Entity
-@Table(name = "member_latest_ai_review")
-@IdClass(MemberLatestAiReviewId.class)
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@IdClass(MemberLatestAiReviewId.class)
+@Table(name = "member_latest_ai_review")
 public class MemberLatestAiReviewJpaEntity {
 
 	@Id
