@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.grow.notification_service.analysis.application.event.QuizNotificationProducer;
 import com.grow.notification_service.analysis.application.port.LlmClientPort;
 import com.grow.notification_service.analysis.application.prompt.QuizPrompt;
 import com.grow.notification_service.analysis.application.service.QuizGenerationApplicationService;
@@ -40,6 +41,7 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 	private final ObjectMapper mapper;
 	private final SkillTagToCategoryRegistry skillTagToCategoryRegistry;
 	private final MemberQuizResultPort memberQuizResultPort;
+	private final QuizNotificationProducer quizNotificationProducer;
 
 	/**
 	 * LLM으로 5문제 생성 -> 파싱 -> 저장 후 반환
@@ -80,6 +82,14 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 				saved.add(quizRepository.save(q));
 			}
 			log.info("[QUIZ][GEN][END] 저장 완료 - saved={}", saved.size());
+
+			quizNotificationProducer.quizGenerated(
+				memberId,
+				categoryId,
+				saved.stream().map(Quiz::getQuizId).toList(),
+				false
+			);
+
 			return saved;
 
 		} catch (AnalysisException ae) {
@@ -185,6 +195,14 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 			saved.add(quizRepository.save(q));
 		}
 		log.info("[QUIZ][GEN][FROM_WRONG][END] 저장 완료 - requested=5, saved={}", saved.size());
+
+		quizNotificationProducer.quizGenerated(
+			memberId,
+			categoryId,
+			saved.stream().map(Quiz::getQuizId).toList(),
+			true // generateQuizzesFromWrong → 오답 기반
+		);
+
 		return saved;
 	}
 
