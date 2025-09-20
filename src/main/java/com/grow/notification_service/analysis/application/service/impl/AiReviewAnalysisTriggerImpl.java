@@ -25,7 +25,7 @@ public class AiReviewAnalysisTriggerImpl implements AiReviewAnalysisTrigger {
 	 * @param items 퀴즈 응답 아이템 리스트
 	 */
 	@Override
-	public void triggerAfterResponse(Long memberId, Long categoryId, List<QuizItem> items) {
+	public void triggerAfterResponse(Long memberId, Long categoryId, List<QuizItem> items, String sessionId) {
 		// 빈 입력이면 발행 안 함
 		if (items == null || items.isEmpty()) return;
 
@@ -36,6 +36,6 @@ public class AiReviewAnalysisTriggerImpl implements AiReviewAnalysisTrigger {
 		if (quizIds.isEmpty()) return;
 
 		// 비동기 리스너가 처리
-		publisher.publishEvent(new AiReviewViewedEvent(memberId, categoryId, quizIds));
+		publisher.publishEvent(new AiReviewViewedEvent(memberId, categoryId, sessionId, quizIds));
 	}
 }

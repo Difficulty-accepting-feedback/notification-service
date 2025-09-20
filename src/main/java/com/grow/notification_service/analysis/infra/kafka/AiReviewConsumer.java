@@ -1,8 +1,12 @@
 package com.grow.notification_service.analysis.infra.kafka;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
+import com.grow.notification_service.analysis.domain.model.eums.AiReviewSession;
+import com.grow.notification_service.analysis.domain.repository.AiReviewSessionRepository;
 import com.grow.notification_service.analysis.infra.persistence.entity.MemberLatestAiReviewJpaEntity;
 import com.grow.notification_service.analysis.infra.persistence.repository.MemberLatestAiReviewJpaRepository;
 import com.grow.notification_service.global.util.JsonUtils;
@@ -30,6 +34,7 @@ public class AiReviewConsumer {
 	private final QuizGenerationApplicationService quizGen;
 	private final StringRedisTemplate redis;
 	private final MemberLatestAiReviewJpaRepository latestRepo;
+	private final AiReviewSessionRepository sessionRepo;
 
 	private static final Duration DEDUPE_TTL = Duration.ofMinutes(10); // 10분 내 중복 요청 차단
 
@@ -74,33 +79,27 @@ public class AiReviewConsumer {
 			List<Quiz> saved = quizGen.generateQuizzesFromWrong(
 				evt.memberId(), evt.categoryId(), evt.levelParam(), evt.topic()
 			);
-			log.info("[AI-REVIEW][GEN][END] memberId={}, categoryId={}, saved={}",
-				evt.memberId(), evt.categoryId(), saved.size());
+			List<Long> ids = saved.stream().map(Quiz::getQuizId).toList();
 
-			// 방금 생성된 퀴즈 저장
-			List<Long> ids = saved.stream()
-				.map(Quiz::getQuizId)
-				.toList();
-
-			MemberLatestAiReviewJpaEntity row = MemberLatestAiReviewJpaEntity.builder()
+			// 최근 목록 저장
+			latestRepo.save(MemberLatestAiReviewJpaEntity.builder()
 				.memberId(evt.memberId())
 				.categoryId(evt.categoryId())
 				.quizIdsJson(JsonUtils.toJsonString(ids))
-				.updatedAt(java.time.LocalDateTime.now())
-				.build();
+				.updatedAt(LocalDateTime.now())
+				.build());
 
-			latestRepo.save(row);
-			log.info("[AI-REVIEW][QUIZ][SAVE} AI 생성 퀴즈 저장 완료");
+			// 세션 생성 저장
+			String sessionId = UUID.randomUUID().toString();
+			sessionRepo.save(new AiReviewSession(
+				sessionId, evt.memberId(), evt.categoryId(), ids, LocalDateTime.now(), null
+			));
+
+			log.info("[AI-REVIEW][GEN][END] mid={}, cid={}, saved={}, sid={}",
+				evt.memberId(), evt.categoryId(), saved.size(), sessionId);
 
 		} catch (Exception e) {
-			// 재시도 가능하도록 멱등 키 롤백
-			if (key != null) {
-				try {
-					redis.delete(key);
-				} catch (Exception ignore) {
-					log.warn("[AI-REVIEW][DEDUPE][ROLLBACK_FAIL] key={}", key, ignore);
-				}
-			}
+			if (key != null) try { redis.delete(key); } catch (Exception ignore) {}
 			log.error("[KAFKA][AI-REVIEW-WORKER][ERROR] payload={}", payload, e);
 			throw e;
 		}

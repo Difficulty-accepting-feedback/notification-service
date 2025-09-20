@@ -31,10 +31,11 @@ public class AiReviewViewedHandler {
 	public void handle(AiReviewViewedEvent evt) {
 		Long memberId = evt.memberId();
 		Long categoryId = evt.categoryId();
+		String sessionId = evt.sessionId();
 		List<Long> quizIds = evt.quizIds();
 
 		String hash = DigestUtils.md5DigestAsHex(
-			(memberId + ":" + categoryId + ":" + quizIds.toString()).getBytes(StandardCharsets.UTF_8)
+			(memberId + ":" + categoryId + ":" + sessionId + ":" + quizIds.toString()).getBytes(StandardCharsets.UTF_8)
 		);
 		String key = "ai-review:latest:analyze:" + hash;
 
@@ -45,12 +46,12 @@ public class AiReviewViewedHandler {
 				return;
 			}
 			// 실제 분석 수행
-			analysisApplicationService.analyzeFromQuizIds(memberId, categoryId, quizIds);
-			log.info("[AI-REVIEW][ASYNC] 분석 - mid={}, cid={}, size={}",
-				memberId, categoryId, quizIds.size());
+			analysisApplicationService.analyzeFromQuizIds(memberId, categoryId, sessionId, quizIds);
+			log.info("[AI-REVIEW][ASYNC] 분석 - mid={}, cid={}, sid={}, size={}",
+				memberId, categoryId, sessionId, quizIds.size());
 		} catch (Exception e) {
-			log.warn("[AI-REVIEW][ASYNC] 실패 - mid={}, cid={}, err={}",
-				memberId, categoryId, e.toString(), e);
+			log.warn("[AI-REVIEW][ASYNC] 실패 - mid={}, cid={}, sid={}, err={}",
+				memberId, categoryId, sessionId, e.toString(), e);
 		}
 	}
 }
