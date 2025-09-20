@@ -32,7 +32,8 @@ public class NotificationRequestedConsumer {
 			"payment.notification.requested",
 			"qna.notification.requested",
 			"note.notification.requested",
-			"quiz.notification.requested"
+			"quiz.notification.requested",
+			"analysis.notification.requested"
 		},
 		groupId = "notification-service",
 		concurrency = "3"
