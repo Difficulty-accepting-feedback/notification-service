@@ -2,6 +2,7 @@ package com.grow.notification_service.analysis.application.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grow.notification_service.analysis.application.event.AnalysisNotificationProducer;
 import com.grow.notification_service.analysis.application.port.LlmClientPort;
 import com.grow.notification_service.analysis.application.prompt.AnalysisPrompt;
 import com.grow.notification_service.analysis.application.service.AnalysisApplicationService;
@@ -40,6 +41,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	private final ObjectMapper objectMapper;
 	private final KeywordConceptRepository keywordConceptRepository;
 	private final AiReviewSessionRepository sessionRepository;
+	private final AnalysisNotificationProducer analysisNotificationProducer;
 
 	@Override
 	@Transactional
@@ -65,6 +67,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		Analysis saved = analysisRepository.save(analysis);
 		log.info("[ANALYSIS][END] 분석 결과 저장 완료 - analysisId={}, memberId={}, categoryId={}",
 			saved.getAnalysisId(), saved.getMemberId(), saved.getCategoryId());
+		analysisNotificationProducer.analysisCompleted(memberId);
 		return saved;
 	}
 
@@ -225,6 +228,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		try {
 			String finalJson = objectMapper.writeValueAsString(out);
 			Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, null, finalJson));
+			analysisNotificationProducer.analysisCompleted(memberId);
 			return saved;
 		} catch (Exception e) {
 			log.error("[ANALYSIS][FOCUS] 분석 결과 직렬화 실패 - memberId={}, categoryId={}, err={}",
@@ -366,6 +370,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 
 			log.info("[ANALYSIS][FOCUS-SELECTED][END] saved analysisId={}, focus={}, future={}",
 				saved.getAnalysisId(), mergedFocus.size(), futureConcepts.size());
+			analysisNotificationProducer.focusGuideReady(memberId);
 		} catch (Exception e) {
 			throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
 		}
