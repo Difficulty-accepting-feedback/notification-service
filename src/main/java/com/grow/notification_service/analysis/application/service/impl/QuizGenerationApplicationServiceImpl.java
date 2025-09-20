@@ -200,7 +200,7 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 			memberId,
 			categoryId,
 			saved.stream().map(Quiz::getQuizId).toList(),
-			true // generateQuizzesFromWrong → 오답 기반
+			true
 		);
 
 		return saved;
