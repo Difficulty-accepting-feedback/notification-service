@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.grow.notification_service.analysis.application.port.LlmClientPort;
 import com.grow.notification_service.analysis.application.prompt.QuizPrompt;
 import com.grow.notification_service.analysis.application.service.QuizGenerationApplicationService;
+import com.grow.notification_service.analysis.infra.llm.JsonSchemas;
+import com.grow.notification_service.analysis.infra.llm.LlmJsonSanitizer;
 import com.grow.notification_service.global.exception.AnalysisException;
 import com.grow.notification_service.global.exception.ErrorCode;
 import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
@@ -63,11 +65,13 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 			String user = buildUserPrompt(categoryId, levelParam, topic, skillTagCode);
 			log.debug("[QUIZ][GEN][PROMPT] system={}, user={}", system, user);
 
-			String json = llm.generateJson(system, user);
-			log.info("[QUIZ][GEN][LLM] 호출 완료");
+			String raw  = llm.generateJson(system, user, JsonSchemas.quizArray());
+			String json = LlmJsonSanitizer.sanitize(raw, true);
+			log.info("[QUIZ][GEN][LLM] 호출 완료 - rawLen={}, sanitizedLen={}",
+				raw == null ? 0 : raw.length(), json == null ? 0 : json.length());
 
 			// 파싱
-			List<Quiz> parsed = parseQuizzes(json, categoryId, forcedLevel, randomMode);
+			List<Quiz> parsed = parseQuizArray(json, categoryId, forcedLevel, randomMode);
 			log.info("[QUIZ][GEN][PARSE] parsedCount={}", parsed.size());
 
 			// 저장
@@ -116,19 +120,47 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 
 		// 2) 입력 payload 구성
 		String itemsJson = buildItemsJson(byId, wrongIds);
-		boolean randomMode = isRandom(levelParam);
-		QuizLevel forcedLevel = randomMode ? null : parseLevelOrNull(levelParam);
+
+		// 평균 난이도 계산
+		QuizLevel avgLevel = averageLevel(wrongIds, byId); // 없으면 null 반환
+		log.info("[QUIZ][GEN][FROM_WRONG] 평균 난이도 계산 - avgLevel={}", avgLevel);
+
+		// levelParam이 RANDOM/빈값/AUTO면 평균 사용(있으면 강제, 없으면 RANDOM)
+		boolean isRandomInput = isRandom(levelParam);
+		boolean useAverage = isRandomInput || "AUTO".equalsIgnoreCase(levelParam);
+
+		// 사용자가 명시했으면 우선, 아니면 평균 난이도로 강제 / 없으면 RANDOM
+		QuizLevel forcedLevel;
+		boolean randomMode;
+
+
+		if (useAverage && avgLevel != null) {
+			forcedLevel = avgLevel; // 평균으로 강제
+			randomMode = false;
+		} else if (isRandomInput) {
+			forcedLevel = null; // 평균도 없고 입력은 RANDOM -> 진짜 랜덤
+			randomMode = true;
+		} else {
+			forcedLevel = parseLevelOrNull(levelParam); // 사용자 명시 우선
+			randomMode = false;
+		}
+
+		String levelForPrompt = randomMode ? "RANDOM" : forcedLevel.name();
+		log.info("[QUIZ][GEN][FROM_WRONG] 평균 난이도={}, userParam={}, 최종레벨={}, randomMode={}",
+			avgLevel, levelParam, levelForPrompt, randomMode);
 
 		// 3) LLM 호출
 		String system = QuizPrompt.GENERATE_FROM_WRONG.getSystem();
-		String user = buildQuizFromWrongUserPrompt(itemsJson, categoryId, levelParam, topic);
+		String user = buildQuizFromWrongUserPrompt(itemsJson, categoryId, levelForPrompt, topic);
 		log.debug("[QUIZ][GEN][FROM_WRONG][PROMPT] system={}, user={}", system, user);
 
-		String json = llm.generateJson(system, user);
-		log.info("[QUIZ][GEN][FROM_WRONG][LLM] 호출 완료");
+		String raw  = llm.generateJson(system, user, JsonSchemas.quizArray());
+		String json = LlmJsonSanitizer.sanitize(raw, true);
+		log.info("[QUIZ][GEN][FROM_WRONG][LLM] 호출 완료 - rawLen={}, sanitizedLen={}",
+			raw == null ? 0 : raw.length(), json == null ? 0 : json.length());
 
 		// 4) 파싱/검증/중복제거
-		List<Quiz> parsed = parseGeneratedQuizzes(json, categoryId, forcedLevel, randomMode);
+		List<Quiz> parsed = parseQuizArray(json, categoryId, forcedLevel, randomMode);
 		log.info("[QUIZ][GEN][FROM_WRONG][PARSE] parsedCount={}", parsed.size());
 
 		// 세션 내 중복 제거 + DB 중복 제거
@@ -180,210 +212,6 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 요청:
 - 위 입력을 반영해 스키마에 맞춘 '유효한 JSON 배열'만 반환하라.
 """.formatted(categoryId, skillTagCode, lv, tp);
-	}
-
-	/**
-	 * LLM 응답 파싱
-	 * @param json LLM 응답 JSON 문자열
-	 * @param categoryId 카테고리
-	 * @param forcedLevel EASY|NORMAL|HARD (RANDOM 모드가 아닐 때만 유효)
-	 * @param randomMode RANDOM 모드 여부
-	 * @return 파싱된 Quiz 리스트(항상 5개)
-	 */
-	private List<Quiz> parseQuizzes(String json, Long categoryId, QuizLevel forcedLevel, boolean randomMode) {
-		try {
-			JsonNode root = mapper.readTree(json);
-			// 배열/크기 검사
-			if (!root.isArray()) {
-				throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
-			}
-			ArrayNode arr = (ArrayNode) root;
-			// 5문제 검사
-			if (arr.size() != 5) {
-				throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
-			}
-
-			// 각 항목 검사 및 파싱
-			List<Quiz> out = new ArrayList<>(5);
-			for (JsonNode n : arr) {
-				String question = textReq(n, "question");
-				List<String> choices = readChoices(n);
-				String answer = textReq(n, "answer");
-				String explain = textReq(n, "explain");
-
-				// 제약 조건 검사
-				if (!choices.contains(answer)) {
-					throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
-				}
-
-				QuizLevel level;
-				if (randomMode) {
-					level = parseLevelOrNull(n.has("level") ? n.get("level").asText("") : null);
-					if (level == null) {
-						throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
-					}
-				} else {
-					level = forcedLevel; // EASY/NORMAL/HARD로 강제
-				}
-
-				out.add(Quiz.create(question, choices, answer, explain, level, categoryId));
-			}
-			return out;
-
-		} catch (AnalysisException ae) {
-			throw ae;
-		} catch (Exception e) {
-			log.error("[QUIZ][GEN][PARSE] 실패 - err={}", e.toString(), e);
-			throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED, e);
-		}
-	}
-
-	/**
-	 * 생성된 퀴즈 파싱
-	 * @param json LLM 응답 JSON 문자열
-	 * @param categoryId 카테고리
-	 * @param forcedLevel EASY|NORMAL|HARD (RANDOM 모드가 아닐 때만 유효)
-	 * @param randomMode RANDOM 모드 여부
-	 * @return 파싱된 Quiz 리스트(항상 5개)
-	 */
-	private List<Quiz> parseGeneratedQuizzes(String json, Long categoryId, QuizLevel forcedLevel, boolean randomMode) {
-		try {
-			JsonNode root = mapper.readTree(json); // objectMapper → mapper로 통일
-			// 배열/크기 검사
-			if (!root.isArray()) {
-				throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
-			}
-			ArrayNode arr = (ArrayNode) root;
-			// 5문제 검사
-			if (arr.size() != 5) {
-				throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
-			}
-			List<Quiz> out = new ArrayList<>(5);
-			// 각 항목 검사 및 파싱
-			for (JsonNode n : arr) {
-				long catFromLlm = longReq(n, "categoryId");
-				if (catFromLlm != categoryId) {
-					throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
-				}
-				String question = textReq(n, "question");
-				List<String> choices = readChoices(n);
-				String answer = textReq(n, "answer");
-				String explain = textReq(n, "explain");
-
-				if (!choices.contains(answer))
-					// 정답이 선택지에 포함되어야 함
-					throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
-
-				QuizLevel level;
-				if (randomMode) {
-					level = parseLevelOrNull(n.has("level") ? n.get("level").asText("") : null);
-					if (level == null) {
-						throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
-					}
-				} else {
-					level = forcedLevel; // EASY/NORMAL/HARD로 강제
-				}
-
-				out.add(Quiz.create(question, choices, answer, explain, level, categoryId));
-			}
-			return out;
-
-		} catch (AnalysisException ae) {
-			throw ae;
-		} catch (Exception e) {
-			log.error("[QUIZ][GEN][FROM_WRONG][PARSE] 실패 - err={}", e.toString(), e);
-			throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED, e);
-		}
-	}
-
-	/**
-	 * 필수 텍스트 필드 읽기
-	 * @param n JSON 노드
-	 * @param field 필드명
-	 * @return 읽은 값
-	 */
-	private String textReq(JsonNode n, String field) {
-		// 필수/빈값 검사
-		if (!n.hasNonNull(field)) {
-			throw new AnalysisException(ErrorCode.ANALYSIS_REQUIRED_FIELD_MISSING);
-		}
-		String v = n.get(field).asText("");
-		// 빈값 검사
-		if (v.isBlank()) {
-			throw new AnalysisException(ErrorCode.ANALYSIS_INVALID_FIELD_VALUE);
-		}
-		return v;
-	}
-
-	/**
-	 * choices 필드 읽기
-	 * @param n JSON 노드
-	 * @return 읽은 값 리스트
-	 */
-	private List<String> readChoices(JsonNode n) {
-		// 필수/형식/크기 검사
-		if (!n.has("choices") || !n.get("choices").isArray()) {
-			throw new AnalysisException(ErrorCode.ANALYSIS_INVALID_FIELD_VALUE);
-		}
-		// 4개 검사
-		ArrayNode ca = (ArrayNode) n.get("choices");
-		if (ca.size() != 4) {
-			throw new AnalysisException(ErrorCode.ANALYSIS_INVALID_FIELD_VALUE);
-		}
-		// 각 항목 빈값 검사
-		List<String> list = new ArrayList<>(4);
-		for (JsonNode c : ca) {
-			String s = c.asText("");
-			if (s.isBlank()) throw new AnalysisException(ErrorCode.ANALYSIS_INVALID_FIELD_VALUE);
-			list.add(s);
-		}
-		return list;
-	}
-
-	/**
-	 * 필수 long 필드 읽기
-	 * @param n JSON 노드
-	 * @param field 필드명
-	 * @return 읽은 값
-	 */
-	private long longReq(JsonNode n, String field) {
-		if (!n.hasNonNull(field)) {
-			throw new AnalysisException(ErrorCode.ANALYSIS_REQUIRED_FIELD_MISSING);
-		}
-		JsonNode v = n.get(field);
-		if (v.isIntegralNumber()) return v.asLong();
-		if (v.isTextual()) {
-			try {
-				return Long.parseLong(v.asText().trim());
-			} catch (NumberFormatException ex) {
-				throw new AnalysisException(ErrorCode.ANALYSIS_INVALID_FIELD_VALUE, ex);
-			}
-		}
-		throw new AnalysisException(ErrorCode.ANALYSIS_INVALID_FIELD_VALUE);
-	}
-
-	/**
-	 * RANDOM 모드 여부 판단
-	 * @param levelParam EASY|NORMAL|HARD|RANDOM|null|빈문자열
-	 * @return RANDOM 모드 여부
-	 */
-	private boolean isRandom(String levelParam) {
-		return levelParam == null || levelParam.isBlank() || "RANDOM".equalsIgnoreCase(levelParam.trim());
-	}
-
-	/**
-	 * EASY|NORMAL|HARD 파싱
-	 * @param v 파싱할 문자열
-	 * @return 파싱된 QuizLevel, 알 수 없는 값이면 null 반환
-	 */
-	private QuizLevel parseLevelOrNull(String v) {
-		if (v == null) return null;
-		return switch (v.trim().toUpperCase()) {
-			case "EASY" -> QuizLevel.EASY;
-			case "NORMAL" -> QuizLevel.NORMAL;
-			case "HARD" -> QuizLevel.HARD;
-			default -> null;
-		};
 	}
 
 	/**
@@ -439,4 +267,121 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 			throw new AnalysisException(ErrorCode.ANALYSIS_INPUT_SERIALIZE_FAILED, ex);
 		}
 	}
+
+	/**
+	 * 단일 파서: 스키마가 형식을 보장하므로 단순 파싱(필요한 교차검증만 유지)
+	 * @param json LLM 응답(JSON 배열)
+	 * @param categoryId 요청 카테고리
+	 * @param forcedLevel RANDOM이 아닐 때 강제 레벨
+	 * @param randomMode RANDOM 모드 여부
+	 */
+	private List<Quiz> parseQuizArray(String json, Long categoryId, QuizLevel forcedLevel, boolean randomMode) {
+		try {
+			JsonNode root = mapper.readTree(json);
+			if (!root.isArray()) {
+				throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
+			}
+
+			List<Quiz> out = new ArrayList<>();
+			for (JsonNode n : root) {
+				String question = n.path("question").asText("");
+				ArrayNode ca = (ArrayNode) n.path("choices");
+				String answer  = n.path("answer").asText("");
+				String explain = n.path("explain").asText("");
+				String levelStr = n.path("level").asText("");
+				JsonNode catNode = n.path("categoryId");
+
+				// categoryId 일치 확인
+				long catFromLlm = catNode.isIntegralNumber()
+					? catNode.asLong()
+					: Long.parseLong(catNode.asText().trim());
+				if (catFromLlm != categoryId) {
+					throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
+				}
+
+				// choices 파싱
+				List<String> choices = new ArrayList<>(4);
+				if (ca != null) {
+					for (JsonNode c : ca) choices.add(c.asText(""));
+				}
+				// 교차검증: answer는 choices 중 하나
+				if (!choices.contains(answer)) {
+					throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
+				}
+
+				// level 적용
+				QuizLevel level = randomMode ? parseLevelOrNull(levelStr) : forcedLevel;
+				if (level == null) {
+					throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
+				}
+
+				out.add(Quiz.create(question, choices, answer, explain, level, categoryId));
+			}
+			return out;
+
+		} catch (AnalysisException ae) {
+			throw ae;
+		} catch (Exception e) {
+			log.error("[QUIZ][GEN][PARSE] 실패 - err={}", e.toString(), e);
+			throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED, e);
+		}
+	}
+
+	/**
+	 * RANDOM 모드 여부 판단
+	 * @param levelParam EASY|NORMAL|HARD|RANDOM|null|빈문자열
+	 * @return RANDOM 모드 여부
+	 */
+	private boolean isRandom(String levelParam) {
+		return levelParam == null || levelParam.isBlank() || "RANDOM".equalsIgnoreCase(levelParam.trim());
+	}
+
+	/**
+	 * EASY|NORMAL|HARD 파싱
+	 * @param v 파싱할 문자열
+	 * @return 파싱된 QuizLevel, 알 수 없는 값이면 null 반환
+	 */
+	private QuizLevel parseLevelOrNull(String v) {
+		if (v == null) return null;
+		return switch (v.trim().toUpperCase()) {
+			case "EASY" -> QuizLevel.EASY;
+			case "NORMAL" -> QuizLevel.NORMAL;
+			case "HARD" -> QuizLevel.HARD;
+			default -> null;
+		};
+	}
+
+	/** 오답들의 평균 난이도를 계산(EASY=1, NORMAL=2, HARD=3) → 최근접 버킷으로 환산 */
+	private QuizLevel averageLevel(List<Long> wrongIds, Map<Long, Quiz> byId) {
+		int sum = 0;
+		int count = 0;
+
+		for (Long id : wrongIds) {
+			Quiz q = byId.get(id);
+			if (q == null || q.getLevel() == null) continue;
+			sum += levelToScore(q.getLevel());
+			count++;
+		}
+
+		if (count == 0) return null; // 평균 불가 → RANDOM 사용
+
+		double avg = (double) sum / (double) count;
+		return scoreToNearestLevel(avg);
+	}
+
+	private int levelToScore(QuizLevel level) {
+		switch (level) {
+			case EASY: return 1;
+			case NORMAL: return 2;
+			case HARD: return 3;
+			default: return 2;
+		}
+	}
+
+	private QuizLevel scoreToNearestLevel(double avg) {
+		if (avg < 1.5) return QuizLevel.EASY;
+		if (avg < 2.5) return QuizLevel.NORMAL;
+		return QuizLevel.HARD;
+	}
+
 }
