@@ -7,6 +7,7 @@ import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
+import com.google.genai.types.Schema;
 import com.grow.notification_service.analysis.application.port.LlmClientPort;
 import com.grow.notification_service.analysis.infra.config.GeminiProperties;
 
@@ -26,23 +27,27 @@ public class GeminiSdkAdapter implements LlmClientPort {
 	private final GeminiProperties properties;
 
 	/**
-	 * Gemini SDK를 사용하여 JSON 형식의 텍스트 생성
+	 * Gemini LLM SDK를 사용하여 JSON 형식의 텍스트를 생성합니다.
 	 * @param systemPrompt 시스템 프롬프트
 	 * @param userPrompt 사용자 프롬프트
+	 * @param responseSchema 응답 스키마 (null일 경우 스키마 없이 요청)
 	 * @return 생성된 JSON 텍스트
 	 */
 	@Override
-	public String generateJson(String systemPrompt, String userPrompt) {
+	public String generateJson(String systemPrompt, String userPrompt, Schema responseSchema) {
 		Content system = Content.fromParts(Part.fromText(systemPrompt));
 
-		GenerateContentConfig config = GenerateContentConfig.builder()
+		GenerateContentConfig.Builder cb = GenerateContentConfig.builder()
 			.responseMimeType("application/json")
 			.systemInstruction(system)
-			.maxOutputTokens(properties.maxOutputTokens())
-			.build();
+			.maxOutputTokens(properties.maxOutputTokens());
+
+		if (responseSchema != null) {
+			cb.responseSchema(responseSchema);
+		}
 
 		GenerateContentResponse resp =
-			client.models.generateContent(properties.model(), userPrompt, config);
+			client.models.generateContent(properties.model(), userPrompt, cb.build());
 
 		return resp.text();
 	}

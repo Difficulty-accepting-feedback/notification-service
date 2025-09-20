@@ -15,7 +15,9 @@ public class AnalysisMapper {
             e.getAnalysisId(),
             e.getMemberId(),
             e.getCategoryId(),
-            e.getAnalysisResult());
+            e.getSessionId(),
+            e.getAnalysisResult()
+        );
     }
 
     // 도메인을 엔티티로
@@ -23,6 +25,7 @@ public class AnalysisMapper {
         return AnalysisJpaEntity.builder()
             .memberId(d.getMemberId())
             .categoryId(d.getCategoryId())
+            .sessionId(d.getSessionId())
             .analysisResult(d.getAnalysisResult())
             .build();
     }

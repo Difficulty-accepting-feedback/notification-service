@@ -43,7 +43,11 @@ public enum ErrorCode {
 	ANALYSIS_QUIZ_GENERATION_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-8", "analysis.quiz.generation.parse.failed"),
 	ANALYSIS_REQUIRED_FIELD_MISSING(HttpStatus.INTERNAL_SERVER_ERROR, "500-9", "analysis.required.field.missing"),
 	ANALYSIS_INVALID_FIELD_VALUE(HttpStatus.INTERNAL_SERVER_ERROR, "500-10", "analysis.invalid.field.value"),
-	ANALYSIS_UNEXPECTED_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-11", "analysis.unexpected.failed"),;
+	ANALYSIS_UNEXPECTED_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-11", "analysis.unexpected.failed"),
+	ANALYSIS_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "404-4", "analysis.session.not.found"),
+	ANALYSIS_FORBIDDEN(HttpStatus.FORBIDDEN, "403-3", "analysis.forbidden"),
+	ANALYSIS_INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "400-8", "analysis.invalid.date.range"),
+	ANALYSIS_SESSION_QUERY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "500-12", "analysis.session.query.failed"),;
 
 	private final HttpStatus status;
 	private final String code;
