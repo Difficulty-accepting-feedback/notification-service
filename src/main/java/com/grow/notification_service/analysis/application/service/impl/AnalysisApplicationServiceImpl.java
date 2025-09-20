@@ -6,10 +6,12 @@ import com.grow.notification_service.analysis.application.port.LlmClientPort;
 import com.grow.notification_service.analysis.application.prompt.AnalysisPrompt;
 import com.grow.notification_service.analysis.application.service.AnalysisApplicationService;
 import com.grow.notification_service.analysis.domain.model.Analysis;
+import com.grow.notification_service.analysis.domain.repository.AiReviewSessionRepository;
 import com.grow.notification_service.analysis.domain.repository.AnalysisRepository;
+import com.grow.notification_service.analysis.infra.llm.JsonSchemas;
+import com.grow.notification_service.analysis.infra.llm.LlmJsonSanitizer;
 import com.grow.notification_service.global.exception.AnalysisException;
 import com.grow.notification_service.global.exception.ErrorCode;
-import com.grow.notification_service.global.util.SignatureUtils;
 import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;
@@ -37,6 +39,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	private final MemberQuizResultPort memberQuizResultPort;
 	private final ObjectMapper objectMapper;
 	private final KeywordConceptRepository keywordConceptRepository;
+	private final AiReviewSessionRepository sessionRepository;
 
 	@Override
 	@Transactional
@@ -51,11 +54,11 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		log.debug("[ANALYSIS][PROMPT] systemPrompt={}, userPrompt={}", systemPrompt, userPrompt);
 
 		// 3) Gemini 호출
-		String resultJson = llmClient.generateJson(systemPrompt, userPrompt);
-		log.info("[ANALYSIS][GEMINI] Gemini 호출 완료 - resultJson={}", resultJson);
+		String resultJson = llmClient.generateJson(systemPrompt, userPrompt, JsonSchemas.roadmap());
+		log.info("[ANALYSIS][GEMINI] Gemini 호출 완료 - resultJson(length)={}", resultJson == null ? 0 : resultJson.length());
 
 		// 4) 도메인 모델 생성
-		Analysis analysis = new Analysis(memberId, categoryId, resultJson);
+		Analysis analysis = new Analysis(memberId, categoryId, null, resultJson);
 		log.debug("[ANALYSIS][ENTITY] Analysis 객체 생성 - {}", analysis);
 
 		// 5) DB 저장
@@ -98,13 +101,15 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		String itemsJson = buildItemsJson(byId, wrongIds);
 		log.debug("[ANALYSIS][FOCUS] LLM 입력 직렬화 완료");
 
-		// 1) 키워드 우선 추출
+		// 1) 키워드 우선 추출 (Schema + Sanitizer)
 		String kwUserPrompt = buildKeywordsUserPrompt(itemsJson);
 		String kwSystem = AnalysisPrompt.FOCUS_KEYWORDS.getSystem();
 		log.debug("[ANALYSIS][FOCUS] KEYWORDS 프롬프트 준비 완료");
 
-		String kwJson = llmClient.generateJson(kwSystem, kwUserPrompt);
-		log.info("[ANALYSIS][FOCUS] KEYWORDS LLM 호출 완료");
+		String kwRaw  = llmClient.generateJson(kwSystem, kwUserPrompt, JsonSchemas.focusKeywords());
+		String kwJson = LlmJsonSanitizer.sanitize(kwRaw, false);
+		log.info("[ANALYSIS][FOCUS] KEYWORDS LLM 호출 완료 - rawLen={}, sanitizedLen={}",
+			kwRaw == null ? 0 : kwRaw.length(), kwJson == null ? 0 : kwJson.length());
 
 		List<String> keywords = parseKeywords(kwJson);
 		log.debug("[ANALYSIS][FOCUS] 키워드 파싱 완료 - keywords={}", keywords);
@@ -144,8 +149,10 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			String sumSystem = AnalysisPrompt.FOCUS_SUMMARY.getSystem();
 			log.debug("[ANALYSIS][FOCUS] SUMMARY 프롬프트 준비 완료");
 
-			String sumJson = llmClient.generateJson(sumSystem, sumUserPrompt);
-			log.info("[ANALYSIS][FOCUS] SUMMARY LLM 호출 완료");
+			String sumRaw  = llmClient.generateJson(sumSystem, sumUserPrompt, JsonSchemas.focusSummary());
+			String sumJson = LlmJsonSanitizer.sanitize(sumRaw, false);
+			log.info("[ANALYSIS][FOCUS] SUMMARY LLM 호출 완료 - rawLen={}, sanitizedLen={}",
+				sumRaw == null ? 0 : sumRaw.length(), sumJson == null ? 0 : sumJson.length());
 
 			// 신규 focusConcepts 파싱
 			List<Map<String, String>> focusConceptsNewOnly = parseFocusConcepts(sumJson);
@@ -163,8 +170,10 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 						new KeywordConcept(norm, original, summary)
 					);
 					existing.put(norm, saved);
-					newFocus.add(Map.of("keyword", saved.getKeywordOriginal(),
-						"conceptSummary", saved.getConceptSummary()));
+					newFocus.add(Map.of(
+						"keyword", saved.getKeywordOriginal(),
+						"conceptSummary", saved.getConceptSummary()
+					));
 					upserted++;
 				} catch (DataIntegrityViolationException dup) {
 					log.warn("[ANALYSIS][FOCUS] Upsert 충돌 - norm={}", norm);
@@ -183,8 +192,10 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			String futSystem = AnalysisPrompt.FOCUS_FUTURE.getSystem();
 			log.debug("[ANALYSIS][FOCUS] FUTURE 프롬프트 준비 완료");
 
-			String futJson = llmClient.generateJson(futSystem, futUserPrompt);
-			log.info("[ANALYSIS][FOCUS] FUTURE LLM 호출 완료");
+			String futRaw  = llmClient.generateJson(futSystem, futUserPrompt, JsonSchemas.futureOnly());
+			String futJson = LlmJsonSanitizer.sanitize(futRaw, false);
+			log.info("[ANALYSIS][FOCUS] FUTURE LLM 호출 완료 - rawLen={}, sanitizedLen={}",
+				futRaw == null ? 0 : futRaw.length(), futJson == null ? 0 : futJson.length());
 
 			futureConcepts = parseFutureConcepts(futJson);
 			log.info("[ANALYSIS][FOCUS] futureConcepts 파싱 - count={}", futureConcepts.size());
@@ -211,21 +222,15 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		out.put("focusConcepts", mergedFocus);
 		out.put("futureConcepts", futureConcepts);
 
-		String finalJson;
 		try {
-			finalJson = objectMapper.writeValueAsString(out);
-			log.debug("[ANALYSIS][FOCUS] 최종 JSON 직렬화 완료");
+			String finalJson = objectMapper.writeValueAsString(out);
+			Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, null, finalJson));
+			return saved;
 		} catch (Exception e) {
 			log.error("[ANALYSIS][FOCUS] 분석 결과 직렬화 실패 - memberId={}, categoryId={}, err={}",
 				memberId, categoryId, e, e);
 			throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
 		}
-
-		Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, finalJson));
-		log.info("[ANALYSIS][FOCUS][END] 저장 완료 - analysisId={}, memberId={}, categoryId={}",
-			saved.getAnalysisId(), saved.getMemberId(), saved.getCategoryId());
-
-		return saved;
 	}
 
 	/**
@@ -233,13 +238,14 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	 *
 	 * @param memberId   멤버 ID
 	 * @param categoryId 카테고리 ID
+	 * @param sessionId  세션 ID (AI 생성 퀴즈 묶음)
 	 * @param quizIds    선택된 퀴즈 ID 목록
 	 */
 	@Override
 	@Transactional
-	public void analyzeFromQuizIds(Long memberId, Long categoryId, List<Long> quizIds) {
-		log.info("[ANALYSIS][FOCUS-SELECTED][START] memberId={}, categoryId={}, ids={}",
-			memberId, categoryId, quizIds);
+	public void analyzeFromQuizIds(Long memberId, Long categoryId, String sessionId, List<Long> quizIds) {
+		log.info("[ANALYSIS][FOCUS-SELECTED][START] memberId={}, categoryId={}, sessionId={}, ids={}",
+			memberId, categoryId, sessionId, quizIds);
 		// 입력 비었으면 아무 것도 하지 않고 종료
 		if (quizIds == null || quizIds.isEmpty()) {
 			log.debug("[ANALYSIS][FOCUS-SELECTED][SKIP] empty quizIds - memberId={}, categoryId={}",
@@ -268,7 +274,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		// 3) 키워드 추출
 		String kwUser = buildKeywordsUserPrompt(itemsJson);
 		String kwSystem = AnalysisPrompt.FOCUS_KEYWORDS.getSystem();
-		String kwJson = llmClient.generateJson(kwSystem, kwUser);
+		String kwRaw  = llmClient.generateJson(kwSystem, kwUser, JsonSchemas.focusKeywords());
+		String kwJson = LlmJsonSanitizer.sanitize(kwRaw, false);
 		List<String> keywords = parseKeywords(kwJson);
 
 		// 4) 정규화 + 중복 제거
@@ -293,7 +300,9 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			List<String> targets = missingNorm.stream().map(normToOriginal::get).toList();
 			String sumUser = buildSummaryUserPrompt(itemsJson, targets);
 			String sumSystem = AnalysisPrompt.FOCUS_SUMMARY.getSystem();
-			String sumJson = llmClient.generateJson(sumSystem, sumUser);
+
+			String sumRaw  = llmClient.generateJson(sumSystem, sumUser, JsonSchemas.focusSummary());
+			String sumJson = LlmJsonSanitizer.sanitize(sumRaw, false);
 
 			// 신규 focusConcepts 파싱 + 저장
 			List<Map<String, String>> focusConceptsNewOnly = parseFocusConcepts(sumJson);
@@ -308,8 +317,10 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 						new KeywordConcept(norm, original, summary)
 					);
 					existing.put(norm, saved);
-					newFocus.add(Map.of("keyword", saved.getKeywordOriginal(),
-						"conceptSummary", saved.getConceptSummary()));
+					newFocus.add(Map.of(
+						"keyword", saved.getKeywordOriginal(),
+						"conceptSummary", saved.getConceptSummary()
+					));
 					upserted++;
 				} catch (DataIntegrityViolationException dup) {
 					keywordConceptRepository.findByKeywordNormalized(norm)
@@ -321,7 +332,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		} else {
 			String futUser = buildFutureOnlyUserPrompt(itemsJson);
 			String futSystem = AnalysisPrompt.FOCUS_FUTURE.getSystem();
-			String futJson = llmClient.generateJson(futSystem, futUser);
+			String futRaw  = llmClient.generateJson(futSystem, futUser, JsonSchemas.futureOnly());
+			String futJson = LlmJsonSanitizer.sanitize(futRaw, false);
 			futureConcepts = parseFutureConcepts(futJson);
 		}
 
@@ -335,23 +347,25 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			}
 		}
 
-		// 7)  시그니처 생성 + 메타 포함하여 JSON 직렬화 후 저장
-		String signature = SignatureUtils.ofQuizIds(filtered);
-
+		// 7) 메타 포함하여 JSON 직렬화 후 저장
 		Map<String, Object> out = new LinkedHashMap<>();
 		out.put("memberId", memberId);
 		out.put("categoryId", categoryId);
 		out.put("source", "latest");
-		out.put("signature", signature);
+		out.put("sessionId", sessionId);
 		out.put("usedQuizIds", filtered);
 		out.put("focusConcepts", mergedFocus);
 		out.put("futureConcepts", futureConcepts);
 
 		try {
 			String finalJson = objectMapper.writeValueAsString(out);
-			Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, finalJson));
-			log.info("[ANALYSIS][FOCUS-SELECTED][END] saved analysisId={}, focus={}, future={}, sig={}",
-				saved.getAnalysisId(), mergedFocus.size(), futureConcepts.size(), signature);
+
+			// 세션 연계 저장
+			Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, sessionId, finalJson));
+			sessionRepository.linkAnalysis(sessionId, saved.getAnalysisId());
+
+			log.info("[ANALYSIS][FOCUS-SELECTED][END] saved analysisId={}, focus={}, future={}",
+				saved.getAnalysisId(), mergedFocus.size(), futureConcepts.size());
 		} catch (Exception e) {
 			throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
 		}
