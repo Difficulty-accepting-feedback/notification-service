@@ -115,22 +115,101 @@ public final class JsonSchemas {
 			.build();
 	}
 
-	/** { "초급": string[], "중급": string[], "상급": string[] } */
+	/**
+	 * 스케줄형 학습 로드맵(JSON) 스키마 생성
+	 * - 구성 필드:
+	 *   • 기간설정        : { 총주차(int), 주당시간(int) }                (필수)
+	 *   • 핵심개념        : [{ name, why, priority(int), level }]        (최소 4개)
+	 *   • 주차로드맵      : [{ week(int), theme, focus[], 학습활동[], 실습과제[], 평가[], 예상시간(int) }] (최소 4개)
+	 *   • 마일스톤        : [{ week(int), goal, 검증방법[] }]            (최소 1개)
+	 *   • 참고자료        : [{ type, title, url? }]                       (선택)
+	 * - 제약: "기간설정", "핵심개념", "주차로드맵", "마일스톤" 필수
+	 */
 	public static Schema roadmap() {
-		Schema stringArray = Schema.builder()
-			.type("array")
-			.minItems(3L) // 필요 시 조정
-			.items(Schema.builder().type("string").build())
+		// 기간설정: 총주차, 주당시간
+		Schema period = Schema.builder()
+			.type("object")
+			.properties(Map.of(
+				"총주차",   Schema.builder().type("integer").build(),
+				"주당시간", Schema.builder().type("integer").build()
+			))
+			.required(List.of("총주차","주당시간"))
+			.build();
+
+		// 핵심개념 항목
+		Schema coreConcept = Schema.builder()
+			.type("object")
+			.properties(Map.of(
+				"name",     Schema.builder().type("string").build(),
+				"why",      Schema.builder().type("string").build(),
+				"priority", Schema.builder().type("integer").build(),
+				"level",    Schema.builder().type("string").build()
+			))
+			.required(List.of("name","why","priority","level"))
+			.build();
+
+		// 주차로드맵
+		Schema weekPlan = Schema.builder()
+			.type("object")
+			.properties(Map.of(
+				"week",     Schema.builder().type("integer").build(),
+				"theme",    Schema.builder().type("string").build(),
+				"focus",    Schema.builder()
+					.type("array").minItems(1L)
+					.items(Schema.builder().type("string").build())
+					.build(),
+				"학습활동", Schema.builder()
+					.type("array").minItems(1L)
+					.items(Schema.builder().type("string").build())
+					.build(),
+				"실습과제", Schema.builder()
+					.type("array").minItems(1L)
+					.items(Schema.builder().type("string").build())
+					.build(),
+				"평가",     Schema.builder()
+					.type("array").minItems(1L)
+					.items(Schema.builder().type("string").build())
+					.build(),
+				"예상시간", Schema.builder().type("integer").build()
+			))
+			.required(List.of("week","theme","focus","학습활동","실습과제","평가","예상시간"))
+			.build();
+
+		// 마일스톤
+		Schema milestone = Schema.builder()
+			.type("object")
+			.properties(Map.of(
+				"week",     Schema.builder().type("integer").build(),
+				"goal",     Schema.builder().type("string").build(),
+				"검증방법", Schema.builder()
+					.type("array").minItems(1L)
+					.items(Schema.builder().type("string").build())
+					.build()
+			))
+			.required(List.of("week","goal","검증방법"))
+			.build();
+
+		// 참고자료
+		Schema reference = Schema.builder()
+			.type("object")
+			.properties(Map.of(
+				"type",  Schema.builder().type("string").build(),
+				"title", Schema.builder().type("string").build(),
+				"url",   Schema.builder().type("string").build()
+			))
+			.required(List.of("type","title"))
 			.build();
 
 		return Schema.builder()
 			.type("object")
 			.properties(Map.of(
-				"초급", stringArray,
-				"중급", stringArray,
-				"상급", stringArray
+				"기간설정",   period,
+				"핵심개념",   Schema.builder().type("array").minItems(4L).items(coreConcept).build(),
+				"주차로드맵", Schema.builder().type("array").minItems(4L).items(weekPlan).build(),
+				"마일스톤",   Schema.builder().type("array").minItems(1L).items(milestone).build(),
+				"참고자료",   Schema.builder().type("array").items(reference).build()
 			))
-			.required(List.of("초급","중급","상급"))
+			.required(List.of("기간설정","핵심개념","주차로드맵","마일스톤"))
 			.build();
 	}
 }
