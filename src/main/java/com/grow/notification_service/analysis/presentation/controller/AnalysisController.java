@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,10 +25,12 @@ import com.grow.notification_service.analysis.presentation.controller.dto.AiRevi
 import com.grow.notification_service.analysis.presentation.controller.dto.AnalysisResponse;
 import com.grow.notification_service.analysis.presentation.controller.dto.QuizItemWithSession;
 import com.grow.notification_service.analysis.presentation.controller.dto.QuizResponse;
+import com.grow.notification_service.analysis.presentation.controller.dto.RoadmapAnalyzeRequest;
 import com.grow.notification_service.global.dto.RsData;
 import com.grow.notification_service.quiz.application.dto.QuizItem;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -41,18 +44,6 @@ public class AnalysisController {
 	private final AiReviewQueryService aiReviewQueryService;
 	private final AiReviewAnalysisTrigger aiReviewAnalysisTrigger;
 	private final AiReviewSessionQueryService sessionQueryService;
-
-	/**
-	 * 자바 프로그래밍 학습 로드맵 분석 요청 (테스트용입니다)
-	 */
-	@PostMapping
-	public AnalysisResponse analyze(
-		@RequestHeader("X-Authorization-Id") Long memberId,
-		@RequestParam Long categoryId
-	) {
-		Analysis analysis = service.analyze(memberId, categoryId);
-		return AnalysisResponse.from(analysis, new ObjectMapper());
-	}
 
 	/**
 	 * 틀린 퀴즈 기반 분석 요청
@@ -142,5 +133,16 @@ public class AnalysisController {
 		@RequestParam("to")   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
 	) {
 		return sessionQueryService.getSessions(memberId, categoryId, from, to);
+	}
+
+	/** 그룹 선택 후 스킬태그 기반 로드맵 생성 또는 조회 */
+	@PostMapping("/roadmap")
+	public AnalysisResponse runRoadmap(
+		@RequestHeader("X-Authorization-Id") Long memberId,
+		@RequestBody @Valid RoadmapAnalyzeRequest req
+	) {
+		// category, groupId 전달
+		Analysis analysis = service.analyze(memberId, req.getCategory(), req.getGroupId());
+		return AnalysisResponse.from(analysis, objectMapper);
 	}
 }
