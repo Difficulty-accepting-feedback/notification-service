@@ -18,7 +18,7 @@ public class SkillTagToCategoryRegistry {
 	private static final Map<String, Long> MAP = Map.ofEntries(
 		Map.entry("JAVA_PROGRAMMING", 1L),
 		Map.entry("ENGLISH_CONVERSATION", 2L),
-		Map.entry("DATABASE_MANAGEMENT", 3L)
+		Map.entry("PYTHON_DATA_SCIENCE", 3L)
 		// 필요시 추가
 	);
 

@@ -15,7 +15,7 @@ class SkillTagToCategoryRegistryTest {
 	void resolve_success() {
 		Long javaCat = registry.resolveOrThrow("JAVA_PROGRAMMING");
 		Long engCat = registry.resolveOrThrow("ENGLISH_CONVERSATION");
-		Long dbCat = registry.resolveOrThrow("DATABASE_MANAGEMENT");
+		Long dbCat = registry.resolveOrThrow("PYTHON_DATA_SCIENCE");
 
 		assertEquals(1L, javaCat);
 		assertEquals(2L, engCat);

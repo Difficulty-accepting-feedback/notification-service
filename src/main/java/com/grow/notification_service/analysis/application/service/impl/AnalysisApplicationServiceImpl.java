@@ -3,6 +3,7 @@ package com.grow.notification_service.analysis.application.service.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grow.notification_service.analysis.application.event.AnalysisNotificationProducer;
+import com.grow.notification_service.analysis.application.port.GroupMembershipPort;
 import com.grow.notification_service.analysis.application.port.LlmClientPort;
 import com.grow.notification_service.analysis.application.prompt.AnalysisPrompt;
 import com.grow.notification_service.analysis.application.service.AnalysisApplicationService;
@@ -13,6 +14,7 @@ import com.grow.notification_service.analysis.infra.llm.JsonSchemas;
 import com.grow.notification_service.analysis.infra.llm.LlmJsonSanitizer;
 import com.grow.notification_service.global.exception.AnalysisException;
 import com.grow.notification_service.global.exception.ErrorCode;
+import com.grow.notification_service.quiz.application.mapping.SkillTagToCategoryRegistry;
 import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;
@@ -42,34 +44,123 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	private final KeywordConceptRepository keywordConceptRepository;
 	private final AiReviewSessionRepository sessionRepository;
 	private final AnalysisNotificationProducer analysisNotificationProducer;
+	private final GroupMembershipPort groupMembershipPort;
+	private final SkillTagToCategoryRegistry skillTagToCategoryRegistry;
 
+	/**
+	 * 그룹 스킬태그 기반 학습 로드맵 생성
+	 * - 1단계: study_service 재조회로 {category} 내 groupId 소속 검증 및 skillTag 확보
+	 * - 2단계: skillTag → categoryId 매핑
+	 * - 3단계: 세션 id("rdmp:skill:{skillTag}")로 카테고리+세션키 최신 1건 재사용
+	 *         (있으면 payload만 복사해 요청자 기준으로 저장, LLM 생략)
+	 * - 4단계: 재사용 실패 시 LLM 호출 -> 결과 JSON 저장
+	 * - 5단계: 분석 완료 이벤트 발행
+	 */
 	@Override
 	@Transactional
-	public Analysis analyze(Long memberId, Long categoryId) {
-		log.info("[ANALYSIS][START] 분석 요청 시작 - memberId={}, categoryId={}", memberId, categoryId);
+	public Analysis analyze(Long memberId, String category, Long groupId) {
+		log.info("[ANALYSIS][ROADMAP][VERIFY] mid={}, category={}, gid={}", memberId, category, groupId);
 
-		// 1) 시스템 프롬프트
+		// 1) 서버 조회: category 내 groupId 소속 검증
+		List<GroupMembershipPort.GroupSimpleResponse> groups =
+			groupMembershipPort.getMyJoinedGroups(memberId, category);
+		Optional<GroupMembershipPort.GroupSimpleResponse> found =
+			groups.stream().filter(g -> Objects.equals(g.groupId(), groupId)).findFirst();
+		if (found.isEmpty()) {
+			log.warn("[ANALYSIS][ROADMAP][VERIFY][DENY] 그룹이 없거나 카테고리 불일치 - mid={}, gid={}, category={}",
+				memberId, groupId, category);
+			throw new AnalysisException(ErrorCode.MEMBER_RESULT_FETCH_FAILED);
+		}
+
+		// 2) 그룹명/스킬태그 확보
+		GroupMembershipPort.GroupSimpleResponse auth = found.get();
+		String groupName = auth.groupName();
+		String skillTag  = auth.skillTag();
+
+		// 3) 스킬태그 -> 내부 categoryId 매핑
+		Long categoryId;
+		try {
+			categoryId = skillTagToCategoryRegistry.resolveOrThrow(skillTag);
+		} catch (com.grow.notification_service.global.exception.QuizException e) {
+			throw new AnalysisException(ErrorCode.CATEGORY_MISMATCH, e);
+		}
+
+		// 4) 세션id 생성
+		String sessionId = "rdmp:skill:" + ((skillTag == null || skillTag.isBlank()) ? "NA" : skillTag);
+
+		// 5) 카테고리+세션키 최신 1건 있으면 payload만 복사 저장
+		Optional<Analysis> existing =
+			analysisRepository.findTopByCategoryIdAndSessionIdOrderByAnalysisIdDesc(categoryId, sessionId);
+		if (existing.isPresent()) {
+			try {
+				String existingJson = existing.get().getAnalysisResult();
+				JsonNode existingRoot = objectMapper.readTree(existingJson);
+				JsonNode payloadNode = existingRoot.has("payload") ? existingRoot.get("payload") : existingRoot;
+
+				Map<String, Object> meta = new LinkedHashMap<>();
+				meta.put("memberId", memberId);
+				meta.put("groupId", groupId);
+				meta.put("groupName", groupName);
+				meta.put("category", category);
+				meta.put("categoryId", categoryId);
+				meta.put("skillTag", skillTag);
+				meta.put("sessionId", sessionId);
+				meta.put("sourceAnalysisId", existing.get().getAnalysisId());
+
+				Map<String, Object> envelope = new LinkedHashMap<>();
+				envelope.put("type", "ROADMAP");
+				envelope.put("meta", meta);
+				envelope.put("payload", payloadNode);
+
+				String resultJson = objectMapper.writeValueAsString(envelope);
+
+				Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, sessionId, resultJson));
+				analysisNotificationProducer.analysisCompleted(memberId);
+				log.info("[ANALYSIS][ROADMAP][REUSE] reused from analysisId={}, saved={}",
+					existing.get().getAnalysisId(), saved.getAnalysisId());
+				return saved;
+			} catch (Exception e) {
+				log.error("[ANALYSIS][ROADMAP][REUSE] wrap failed - err={}", e.toString(), e);
+				throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
+			}
+		}
+
+		// 6) LLM 호출 (스킬태그/그룹명 기반)
 		String systemPrompt = AnalysisPrompt.ROADMAP.getSystem();
+		String userPrompt   = buildRoadmapUserPrompt(groupName, skillTag);
+		String raw          = llmClient.generateJson(systemPrompt, userPrompt, JsonSchemas.roadmap());
+		String safe         = LlmJsonSanitizer.sanitize(raw, true);
+		log.info("[ANALYSIS][ROADMAP] LLM done - rawLen={}, safeLen={}",
+			raw == null ? 0 : raw.length(), safe == null ? 0 : safe.length());
 
-		// 2) 사용자 프롬프트
-		String userPrompt = "자바 프로그래밍 학습 로드맵을 수준별 목차로 정리해줘.";
-		log.debug("[ANALYSIS][PROMPT] systemPrompt={}, userPrompt={}", systemPrompt, userPrompt);
+		// 7) 저장
+		try {
+			Map<String, Object> meta = new LinkedHashMap<>();
+			meta.put("memberId", memberId);
+			meta.put("groupId", groupId);
+			meta.put("groupName", groupName);
+			meta.put("category", category);
+			meta.put("categoryId", categoryId);
+			meta.put("skillTag", skillTag);
+			meta.put("sessionId", sessionId);
 
-		// 3) Gemini 호출
-		String resultJson = llmClient.generateJson(systemPrompt, userPrompt, JsonSchemas.roadmap());
-		log.info("[ANALYSIS][GEMINI] Gemini 호출 완료 - resultJson(length)={}", resultJson == null ? 0 : resultJson.length());
+			Map<String, Object> envelope = new LinkedHashMap<>();
+			envelope.put("type", "ROADMAP");
+			envelope.put("meta", meta);
+			envelope.put("payload", objectMapper.readTree(safe));
 
-		// 4) 도메인 모델 생성
-		Analysis analysis = new Analysis(memberId, categoryId, null, resultJson);
-		log.debug("[ANALYSIS][ENTITY] Analysis 객체 생성 - {}", analysis);
+			String resultJson = objectMapper.writeValueAsString(envelope);
 
-		// 5) DB 저장
-		Analysis saved = analysisRepository.save(analysis);
-		log.info("[ANALYSIS][END] 분석 결과 저장 완료 - analysisId={}, memberId={}, categoryId={}",
-			saved.getAnalysisId(), saved.getMemberId(), saved.getCategoryId());
-		analysisNotificationProducer.analysisCompleted(memberId);
-		return saved;
+			Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, sessionId, resultJson));
+			analysisNotificationProducer.analysisCompleted(memberId);
+			log.info("[ANALYSIS][ROADMAP][END] saved analysisId={}", saved.getAnalysisId());
+			return saved;
+		} catch (Exception e) {
+			log.error("[ANALYSIS][ROADMAP] persist/serialize failed - err={}", e.toString(), e);
+			throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
+		}
 	}
+
 
 	/**
 	 * 틀린 문제 기반 학습 가이드 생성
@@ -570,5 +661,39 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			log.warn("[ANALYSIS][FOCUS] futureConcepts 파싱 실패 - err={}", e, e);
 			throw new AnalysisException(ErrorCode.ANALYSIS_FUTURE_PARSE_FAILED, e);
 		}
+	}
+
+	/**
+	 * 로드맵(주차형) 유저 프롬프트 생성
+	 * - 1단계: 기본값 적용 (weeks=8, hoursPerWeek=5 등)
+	 * - 2단계: 입력 컨텍스트 JSON 구성(skillTag, groupName, totalWeeks, hoursPerWeek)
+	 * - 3단계: LLM 사용자 프롬프트 문자열로 반환
+	 */
+	private String buildRoadmapUserPrompt(String groupName, String skillTag) {
+		String tag = (skillTag == null || skillTag.isBlank()) ? "포괄적인 공부법" : skillTag;
+		String grp = (groupName == null || groupName.isBlank()) ? "미지정 그룹" : groupName;
+
+		return """
+    {
+      "input": {
+        "platform": "GROW",
+        "mode": "GROUP_SKILLTAG_ROADMAP_SCHEDULE_AUTO",
+        "skillTag": "%s",
+        "groupName": "%s",
+        "periodPolicy": {
+          "infer": true,
+          "guideline": {
+            "minWeeks": 4,
+            "maxWeeks": 12,
+            "preferredHoursPerWeek": [3, 8],
+            "notes": [
+              "선행지식/학습 난이도에 따라 총주차와 주당시간을 합리적으로 산정",
+              "주차별 예상시간은 기간설정의 주당시간을 과도하게 벗어나지 않게 배분"
+            ]
+          }
+        }
+      }
+    }
+    """.formatted(tag, grp);
 	}
 }
