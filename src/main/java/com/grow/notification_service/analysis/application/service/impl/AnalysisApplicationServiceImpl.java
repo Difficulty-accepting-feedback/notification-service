@@ -127,7 +127,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 
 		// 6) LLM 호출 (스킬태그/그룹명 기반)
 		String systemPrompt = AnalysisPrompt.ROADMAP.getSystem();
-		String userPrompt   = buildRoadmapUserPrompt(groupName, skillTag, 8, 5); // 총 8주, 주 5시간
+		String userPrompt   = buildRoadmapUserPrompt(groupName, skillTag);
 		String raw          = llmClient.generateJson(systemPrompt, userPrompt, JsonSchemas.roadmap());
 		String safe         = LlmJsonSanitizer.sanitize(raw, true);
 		log.info("[ANALYSIS][ROADMAP] LLM done - rawLen={}, safeLen={}",
@@ -669,23 +669,31 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	 * - 2단계: 입력 컨텍스트 JSON 구성(skillTag, groupName, totalWeeks, hoursPerWeek)
 	 * - 3단계: LLM 사용자 프롬프트 문자열로 반환
 	 */
-	private String buildRoadmapUserPrompt(String groupName, String skillTag, Integer totalWeeks, Integer hoursPerWeek) {
-		String tag = (skillTag == null || skillTag.isBlank()) ? "일반 프로그래밍" : skillTag;
+	private String buildRoadmapUserPrompt(String groupName, String skillTag) {
+		String tag = (skillTag == null || skillTag.isBlank()) ? "포괄적인 공부법" : skillTag;
 		String grp = (groupName == null || groupName.isBlank()) ? "미지정 그룹" : groupName;
-		int weeks = (totalWeeks == null || totalWeeks < 1) ? 8 : totalWeeks; // 기본 8주
-		int hpw = (hoursPerWeek == null || hoursPerWeek < 1) ? 5 : hoursPerWeek; // 기본 주당 5시간
 
 		return """
     {
       "input": {
         "platform": "GROW",
-        "mode": "GROUP_SKILLTAG_ROADMAP_SCHEDULE_V2",
+        "mode": "GROUP_SKILLTAG_ROADMAP_SCHEDULE_AUTO",
         "skillTag": "%s",
         "groupName": "%s",
-        "totalWeeks": %d,
-        "hoursPerWeek": %d,
+        "periodPolicy": {
+          "infer": true,
+          "guideline": {
+            "minWeeks": 4,
+            "maxWeeks": 12,
+            "preferredHoursPerWeek": [3, 8],
+            "notes": [
+              "선행지식/학습 난이도에 따라 총주차와 주당시간을 합리적으로 산정",
+              "주차별 예상시간은 기간설정의 주당시간을 과도하게 벗어나지 않게 배분"
+            ]
+          }
+        }
       }
     }
-    """.formatted(tag, grp, weeks, hpw);
+    """.formatted(tag, grp);
 	}
 }
