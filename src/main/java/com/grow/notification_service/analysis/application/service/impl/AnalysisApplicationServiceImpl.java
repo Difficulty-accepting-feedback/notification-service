@@ -48,13 +48,12 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	private final SkillTagToCategoryRegistry skillTagToCategoryRegistry;
 
 	/**
-	 * 그룹 스킬태그 기반 학습 로드맵 생성
-	 * - 1단계: study_service 재조회로 {category} 내 groupId 소속 검증 및 skillTag 확보
-	 * - 2단계: skillTag → categoryId 매핑
-	 * - 3단계: 세션 id("rdmp:skill:{skillTag}")로 카테고리+세션키 최신 1건 재사용
-	 *         (있으면 payload만 복사해 요청자 기준으로 저장, LLM 생략)
-	 * - 4단계: 재사용 실패 시 LLM 호출 -> 결과 JSON 저장
-	 * - 5단계: 분석 완료 이벤트 발행
+	 * 그룹 스킬태그 기반 학습/취미 로드맵 생성
+	 * - 1) 그룹 소속 검증 (study_service)
+	 * - 2) 스킬태그 → 내부 categoryId 매핑
+	 * - 3) 세션 id(rdmp:{study|hobby}:skill:{skillTag})로 최신 1건 재사용
+	 * - 4) 없으면 LLM 호출 (프롬프트: STUDY/HOBBY 분기), JSON 저장
+	 * - 5) 분석 완료 이벤트 발행
 	 */
 	@Override
 	@Transactional
@@ -85,10 +84,17 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			throw new AnalysisException(ErrorCode.CATEGORY_MISMATCH, e);
 		}
 
-		// 4) 세션id 생성
-		String sessionId = "rdmp:skill:" + ((skillTag == null || skillTag.isBlank()) ? "NA" : skillTag);
+		// 4) 프롬프트 선택 (STUDY/HOBBY 분기)
+		AnalysisPrompt prompt = chooseRoadmapPrompt(category, skillTag);
+		String typeLabel = (prompt == AnalysisPrompt.ROADMAP_HOBBY) ? "ROADMAP_HOBBY" : "ROADMAP_STUDY";
 
-		// 5) 카테고리+세션키 최신 1건 있으면 payload만 복사 저장
+		// 5) 세션 id 생성
+		String normalizedSkill = (skillTag == null || skillTag.isBlank()) ? "NA" : skillTag;
+		String sessionId = (prompt == AnalysisPrompt.ROADMAP_HOBBY)
+			? "rdmp:hobby:skill:" + normalizedSkill
+			: "rdmp:study:skill:" + normalizedSkill;
+
+		// 6) 카테고리+세션키 최신 1건 있으면 payload만 복사 저장
 		Optional<Analysis> existing =
 			analysisRepository.findTopByCategoryIdAndSessionIdOrderByAnalysisIdDesc(categoryId, sessionId);
 		if (existing.isPresent()) {
@@ -108,7 +114,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 				meta.put("sourceAnalysisId", existing.get().getAnalysisId());
 
 				Map<String, Object> envelope = new LinkedHashMap<>();
-				envelope.put("type", "ROADMAP");
+				envelope.put("type", typeLabel);
 				envelope.put("meta", meta);
 				envelope.put("payload", payloadNode);
 
@@ -125,15 +131,15 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			}
 		}
 
-		// 6) LLM 호출 (스킬태그/그룹명 기반)
-		String systemPrompt = AnalysisPrompt.ROADMAP.getSystem();
+		// 7) LLM 호출 (스킬태그/그룹명 기반)
+		String systemPrompt = prompt.getSystem();
 		String userPrompt   = buildRoadmapUserPrompt(groupName, skillTag);
 		String raw          = llmClient.generateJson(systemPrompt, userPrompt, JsonSchemas.roadmap());
-		String safe         = LlmJsonSanitizer.sanitize(raw, true);
+		String safe         = LlmJsonSanitizer.sanitize(raw, false);
 		log.info("[ANALYSIS][ROADMAP] LLM done - rawLen={}, safeLen={}",
 			raw == null ? 0 : raw.length(), safe == null ? 0 : safe.length());
 
-		// 7) 저장
+		// 8) 저장
 		try {
 			Map<String, Object> meta = new LinkedHashMap<>();
 			meta.put("memberId", memberId);
@@ -145,7 +151,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			meta.put("sessionId", sessionId);
 
 			Map<String, Object> envelope = new LinkedHashMap<>();
-			envelope.put("type", "ROADMAP");
+			envelope.put("type", typeLabel);
 			envelope.put("meta", meta);
 			envelope.put("payload", objectMapper.readTree(safe));
 
@@ -695,5 +701,23 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
       }
     }
     """.formatted(tag, grp);
+	}
+
+	/**
+	 * 로드맵 프롬프트 선택
+	 * - category: "STUDY" → ROADMAP_STUDY, "HOBBY" → ROADMAP_HOBBY
+	 * - 그 외/미지정은 STUDY
+	 */
+	private AnalysisPrompt chooseRoadmapPrompt(String category, String skillTag) {
+		final String c = Optional.ofNullable(category)
+			.orElse("")
+			.trim()
+			.toUpperCase(Locale.ROOT);
+
+		if (c.startsWith("HOBBY")) return AnalysisPrompt.ROADMAP_HOBBY;
+		if (c.startsWith("STUDY")) return AnalysisPrompt.ROADMAP_STUDY;
+
+		// unknown category는 기본 STUDY로 처리
+		return AnalysisPrompt.ROADMAP_STUDY;
 	}
 }
