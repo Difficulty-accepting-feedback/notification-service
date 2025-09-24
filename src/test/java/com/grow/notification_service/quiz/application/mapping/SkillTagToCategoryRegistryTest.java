@@ -14,12 +14,12 @@ class SkillTagToCategoryRegistryTest {
 	@DisplayName("정상: 매핑된 SkillTag 코드는 올바른 categoryId 반환")
 	void resolve_success() {
 		Long javaCat = registry.resolveOrThrow("JAVA_PROGRAMMING");
-		Long engCat = registry.resolveOrThrow("ENGLISH_CONVERSATION");
 		Long dbCat = registry.resolveOrThrow("PYTHON_DATA_SCIENCE");
+		Long engCat = registry.resolveOrThrow("ENGLISH_CONVERSATION");
 
 		assertEquals(1L, javaCat);
-		assertEquals(2L, engCat);
-		assertEquals(3L, dbCat);
+		assertEquals(2L, dbCat);
+		assertEquals(3L, engCat);
 	}
 
 	@Test

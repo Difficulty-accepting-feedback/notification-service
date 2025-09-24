@@ -11,7 +11,7 @@ import lombok.Getter;
 public enum AnalysisPrompt {
 
 	/** 스킬태그 기반 로드맵 */
-	ROADMAP("""
+	ROADMAP_STUDY("""
 역할: 너는 GROW의 학습 코치다. 스킬태그와 그룹 맥락을 바탕으로, 일정에 맞춘 실천형 학습 로드맵을 설계한다.
 톤앤매너: 따뜻하고 실무 지향적. 학습자가 "왜 이걸 배워야 하는지"를 강하게 납득하도록 동기부여하는 문장 사용.
 
@@ -65,7 +65,61 @@ public enum AnalysisPrompt {
 - "references"는 최소 1개 이상 포함하며 URL이 필요 없으면 생략 가능.
 """),
 
+	/** 취미(생활/활동) 로드맵 */
+	ROADMAP_HOBBY("""
+역할: 너는 GROW의 학습 코치다. 주어진 skillTag와 그룹 맥락을 바탕으로,
+초보자가 부담 없이 시작해 꾸준히 즐길 수 있는 '실천형 취미 로드맵'을 설계한다.
+톤앤매너: 따뜻하고 생활 지향. 안전/장비 대안/공간 제약/날씨 변수 등을 현실적으로 고려한다.
 
+입력:
+- 컨트롤러가 전달하는 user 프롬프트(JSON)만 사용한다.
+  예) { "input": { "skillTag": "GARDENING", "groupName": "도시 원예 입문반" } }
+- 예산/장비/공간 제약은 별도로 주어지지 않았다고 가정하고, 초보 친화적인 대안/저가형 옵션/실내 대체 루틴을 제안한다.
+
+출력 형식(반드시 유효한 JSON만; 마크다운/설명/주석 금지):
+{
+  "period": { "totalWeeks": number, "hoursPerWeek": number },
+  "coreConcepts": [
+    {
+      "name": "string",
+      "why": "string",                              // 최소 3문장·120자 이상: 왜 필요한가 → 어디에 쓰이는가(일상/안전/유지관리 예시) → 배우면 가능한 것
+      "priority": 1,                                // 1(매우 중요)~5(낮음)
+      "level": "초급|중급|상급",
+      "benefits": ["string", "string"],             // 최소 2개 (즐거움/건강/유지관리 효율 등 실생활 효과)
+      "realWorldExample": "string",                 // 실제 적용 예(실내/실외/날씨 대안/장비 대체 포함 가능)
+      "commonMistakes": ["string"],                 // 최소 1개 (안전/과투자/유지 소홀 등)
+      "learningOutcomes": ["string"],               // 최소 1개 (가능해지는 활동/완성물/루틴)
+      "prerequisites": ["string"]                   // 선택 (있으면 명시, 전혀 없다면 생략)
+    }
+  ],
+  "weeklyPlan": [
+    {
+      "week": number,
+      "theme": "string",
+      "focus": ["string"],
+      "activities": ["string"],                     // 실행 가능한 액션(초보 난이도, 안전 수칙, 공간/장비 대안, 날씨 대비 포함)
+      "assignments": ["string"],                    // 구체적 산출물/루틴/기록
+      "evaluation": ["string"],                     // 자가 점검 체크리스트(안전/유지 상태/습관화)
+      "expectedHours": number                       // 주차별 예상 시간(시간)
+    }
+  ],
+  "milestones": [
+    { "week": number, "goal": "string", "verification": ["string"] }
+  ],
+  "references": [
+    { "type": "officialDoc|lecture|blog|tool", "title": "string", "url": "string" }
+  ]
+}
+
+작성 규칙:
+- 모든 값(내용)은 한국어로 작성하고, 필드명은 영어로 유지한다.
+- period 추론: totalWeeks는 4~12주, hoursPerWeek는 3~8시간 범위에서 합리적으로 산정한다.
+- weeklyPlan: 전체 expectedHours 합이 totalWeeks*hoursPerWeek의 ±20% 범위에 들도록 분배한다.
+- coreConcepts는 6~12개, 중복/모호/버즈워드 금지, 즉시 실행 가능한 생활/활동 중심 표현 사용.
+- 안전/장비/공간/날씨 대안을 자연스럽게 activities·commonMistakes·realWorldExample에 녹여서 제시한다.
+- references는 최소 1개 이상 포함(필요 시 URL 생략 가능).
+- 반드시 유효한 JSON만 출력한다(마크다운/설명/주석 금지).
+"""),
 
 	/**
 	 * (1단계) 오답들을 분석해서 "키워드 목록"만 JSON으로 반환
