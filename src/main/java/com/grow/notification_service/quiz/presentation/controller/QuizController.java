@@ -2,13 +2,7 @@ package com.grow.notification_service.quiz.presentation.controller;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.grow.notification_service.global.dto.RsData;
 import com.grow.notification_service.quiz.application.dto.QuizItem;
@@ -63,12 +57,13 @@ public class QuizController {
 	 * @param request - SubmitAnswersRequest
 	 * @return RsData<SubmitAnswersResponse>
 	 */
-	@PostMapping("/answers")
+	@PostMapping("/answers/{groupId}")
 	public RsData<SubmitAnswersResponse> submitAnswers(
 		@RequestHeader("X-Authorization-Id") Long memberId,
-		@RequestBody SubmitAnswersRequest request
+		@RequestBody SubmitAnswersRequest request,
+		@PathVariable("groupId") Long groupId
 	) {
-		SubmitAnswersResponse resp = appService.submitAnswers(memberId, request);
+		SubmitAnswersResponse resp = appService.submitAnswers(memberId, request, groupId);
 		return new RsData<>("200", "정답 제출이 완료되었습니다.", resp);
 	}
 }

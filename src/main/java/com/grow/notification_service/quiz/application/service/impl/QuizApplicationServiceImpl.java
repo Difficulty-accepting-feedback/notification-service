@@ -1,9 +1,14 @@
 package com.grow.notification_service.quiz.application.service.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +19,6 @@ import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.application.dto.QuizItem;
 import com.grow.notification_service.quiz.application.event.QuizAnsweredProducer;
 import com.grow.notification_service.quiz.application.mapping.SkillTagToCategoryRegistry;
-import com.grow.notification_service.quiz.application.port.SubscriptionPort;
 import com.grow.notification_service.quiz.application.service.QuizApplicationService;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;
@@ -38,6 +42,8 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 	private final QuizRepository quizRepository;
 	private final QuizAnsweredProducer eventPublisher;
 	private final AiReviewRequestedProducer aiReviewRequestedProducer;
+	private final RedisTemplate<String, String> redisTemplate;
+	public static final String DAILY_QUIZ_RANK_KEY = "dailyQuizRank:";
 
 	private final QuizReviewService reviewService = new QuizReviewService();
 	/**
@@ -98,7 +104,7 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 	 */
 	@Override
 	@Transactional
-	public SubmitAnswersResponse submitAnswers(Long memberId, SubmitAnswersRequest req) {
+	public SubmitAnswersResponse submitAnswers(Long memberId, SubmitAnswersRequest req, Long groupId) {
 		int itemCount = (req.items() == null ? 0 : req.items().size());
 		log.info("[QUIZ][제출][시도] memberId={}, skillTag={}, mode={}, items={}",
 			memberId, req.skillTag(), req.mode(), itemCount);
@@ -178,6 +184,15 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 
 		// 응답 생성
 		SubmitAnswersResponse resp = new SubmitAnswersResponse(itemCount, correct, results);
+
+		// 어떤 그룹의 어떤 멤버가 문제를 풀고 몇 점을 맞았는지 저장 (redis)
+		// 저장: groupId 키 아래 memberId를 멤버로, 점수를 스코어로
+		String key = DAILY_QUIZ_RANK_KEY + groupId;
+		redisTemplate.opsForZSet().add(key, memberId.toString(), correct);
+
+		LocalDateTime expirationTime = LocalDate.now().plusDays(1).atStartOfDay();  // 다음 날 00:00
+		redisTemplate.expireAt(key, Date.from(expirationTime.atZone(ZoneId.systemDefault()).toInstant()));
+
 		log.info("[QUIZ][제출][성공] memberId={}, total={}, correct={}", memberId, itemCount, correct);
 		return resp;
 	}

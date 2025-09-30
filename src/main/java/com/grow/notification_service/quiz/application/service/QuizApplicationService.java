@@ -9,7 +9,7 @@ import com.grow.notification_service.quiz.presentation.dto.SubmitAnswersResponse
 public interface QuizApplicationService {
 	List<QuizItem> pickQuizByMode(Long memberId, String skillTagCode, String mode);
 
-	SubmitAnswersResponse submitAnswers(Long memberId, SubmitAnswersRequest req);
+	SubmitAnswersResponse submitAnswers(Long memberId, SubmitAnswersRequest req, Long groupId);
 
 	List<QuizItem> pickReviewByHistory(
 		Long memberId, String skillTagCode, String mode,
