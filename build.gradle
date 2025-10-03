@@ -142,6 +142,13 @@ dependencies {
 	// redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	testImplementation "net.bytebuddy:byte-buddy-agent:1.17.6"
+
+	// 모니터링
+	implementation "org.springframework.boot:spring-boot-starter-actuator"
+	implementation "io.micrometer:micrometer-registry-prometheus"
+	implementation "io.micrometer:micrometer-core"
+	implementation "org.springframework.boot:spring-boot-starter-aop"
+
 }
 
 tasks.named('test') {
