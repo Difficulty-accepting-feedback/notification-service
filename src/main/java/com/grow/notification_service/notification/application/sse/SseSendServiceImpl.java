@@ -1,9 +1,14 @@
 package com.grow.notification_service.notification.application.sse;
 
+import com.grow.notification_service.global.metrics.NotificationMetrics;
 import com.grow.notification_service.notification.application.event.dto.NotificationSavedEvent;
 import com.grow.notification_service.notification.application.exception.SseException;
 import com.grow.notification_service.notification.infra.persistence.entity.NotificationType;
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
+
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -47,6 +52,13 @@ import static com.grow.notification_service.notification.application.exception.E
 public class SseSendServiceImpl implements SseSendService {
 
     private final Map<Long, SseEmitter> sseEmitters = new ConcurrentHashMap<>();
+    private final MeterRegistry meterRegistry;
+    private final NotificationMetrics metrics;
+
+    @PostConstruct
+    void bindSseGauge() {
+        meterRegistry.gauge("sse_active_emitters", sseEmitters, Map::size);
+    }
 
     /**
      * 클라이언트가 SSE 연결을 구독할 때 호출되는 메서드입니다.
@@ -89,8 +101,13 @@ public class SseSendServiceImpl implements SseSendService {
             emitter.send(SseEmitter.event().name("[connect]").data("연결이 성공했습니다!"));
             sseEmitters.put(memberId, emitter);
             log.info("[Notification] SSE 연결 성공 - memberId: {}", memberId);
+            metrics.result("sse_subscribe_result_total", "result", "success");
         } catch (IOException e) {
             log.error("[Notification] SSE 연결 실패 - memberId: {}", memberId);
+            metrics.result("sse_subscribe_result_total",
+                "result", "error",
+                "exception", e.getClass().getSimpleName()
+            );
             throw new SseException(SSE_NOT_CONNECTED, e); // 예외 감싸서 전파
         }
 
@@ -114,6 +131,7 @@ public class SseSendServiceImpl implements SseSendService {
      * @throws SseException Emitter가 null인 경우 (연결되지 않음) 발생합니다.
      */
     @Override
+    @Timed(value="sse_send_latency")
     public void sendNotification(Long memberId,
                                  NotificationType notificationType,
                                  String message) {
@@ -123,14 +141,28 @@ public class SseSendServiceImpl implements SseSendService {
                 emitter.send(SseEmitter.event().name(notificationType.getTitle()).data(message));
                 log.info("[Notification] 알림 메시지 전송 완료 - memberId: {}, title: {}, message: {}",
                         memberId, notificationType.getTitle(), message);
+                metrics.result("sse_send_result_total",
+                    "result", "success",
+                    "type", notificationType.name()
+                );
             } catch (IOException e) {
                 log.error("[Notification] 알림 메시지 전송 실패 - memberId: {}, title: {}, message: {}",
                         memberId, notificationType.getTitle(), message);
+                metrics.result("sse_send_result_total",
+                    "result", "error",
+                    "type", notificationType.name(),
+                    "exception", e.getClass().getSimpleName()
+                );
             }
             return;
         }
 
         log.warn("[Notification] SSE 연결 실패 - memberId: {}", memberId);
+        metrics.result("sse_send_result_total",
+            "result", "error",
+            "type", notificationType.name(),
+            "exception", "EmitterNotFound"
+        );
         throw new SseException(SSE_NOT_CONNECTED);
     }
 
@@ -170,11 +202,16 @@ public class SseSendServiceImpl implements SseSendService {
             try {
                 emitter.send(SseEmitter.event().name("ping").data("💚"));
                 log.info("[Notification] heartbeat 전송 성공 - memberId: {}", memberId);
+                metrics.result("sse_heartbeat_send_total", "result", "success");
             } catch (IOException e) {
                 // 전송 실패하면 정리
                 sseEmitters.remove(memberId);
                 try { emitter.complete(); } catch (Exception ignored) {}
                 log.debug("[Notification] heartbeat 실패로 emitter 제거 - memberId: {}", memberId);
+                metrics.result("sse_heartbeat_send_total",
+                    "result", "error",
+                    "exception", e.getClass().getSimpleName()
+                );
             }
         });
     }

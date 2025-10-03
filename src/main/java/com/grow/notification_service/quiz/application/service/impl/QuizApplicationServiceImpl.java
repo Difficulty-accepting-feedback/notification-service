@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.grow.notification_service.global.exception.ErrorCode;
 import com.grow.notification_service.global.exception.QuizException;
+import com.grow.notification_service.global.metrics.NotificationMetrics;
 import com.grow.notification_service.quiz.application.event.AiReviewRequestedProducer;
 import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.application.dto.QuizItem;
@@ -29,6 +30,8 @@ import com.grow.notification_service.quiz.presentation.dto.SubmitAnswerResult;
 import com.grow.notification_service.quiz.presentation.dto.SubmitAnswersRequest;
 import com.grow.notification_service.quiz.presentation.dto.SubmitAnswersResponse;
 
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +47,7 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 	private final AiReviewRequestedProducer aiReviewRequestedProducer;
 	private final RedisTemplate<String, String> redisTemplate;
 	public static final String DAILY_QUIZ_RANK_KEY = "dailyQuizRank:";
+	private final NotificationMetrics metrics;
 
 	private final QuizReviewService reviewService = new QuizReviewService();
 	/**
@@ -104,6 +108,8 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 	 */
 	@Override
 	@Transactional
+	@Timed(value = "quiz_submit_latency")
+	@Counted(value = "quiz_submit_total")
 	public SubmitAnswersResponse submitAnswers(Long memberId, SubmitAnswersRequest req, Long groupId) {
 		int itemCount = (req.items() == null ? 0 : req.items().size());
 		log.info("[QUIZ][제출][시도] memberId={}, skillTag={}, mode={}, items={}",
@@ -159,9 +165,14 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 					ok
 				);
 				log.info("[QUIZ][알림][발행] memberId={}, quizId={}, correct={}", memberId, quiz.getQuizId(), ok);
+				metrics.result("quiz_answer_event_result_total", "result", "success");
 			} catch (Exception e) {
 				log.warn("[QUIZ][알림][발행실패] memberId={}, quizId={}, err={}",
 					memberId, quiz.getQuizId(), e.toString(), e);
+				metrics.result("quiz_answer_event_result_total",
+					"result", "error",
+					"exception", e.getClass().getSimpleName()
+				);
 			}
 		}
 
@@ -176,9 +187,14 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 					null
 				);
 				log.info("[AI-REVIEW][REQUESTED][PUBLISHED] memberId={}, categoryId={}", memberId, categoryId);
+				metrics.result("ai_review_request_result_total", "result", "success");
 			} catch (Exception e) {
 				log.warn("[AI-REVIEW][REQUESTED][FAIL] memberId={}, categoryId={}, err={}",
 					memberId, categoryId, e.toString(), e);
+				metrics.result("ai_review_request_result_total",
+					"result", "error",
+					"exception", e.getClass().getSimpleName()
+				);
 			}
 		}
 
@@ -194,6 +210,10 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 		redisTemplate.expireAt(key, Date.from(expirationTime.atZone(ZoneId.systemDefault()).toInstant()));
 
 		log.info("[QUIZ][제출][성공] memberId={}, total={}, correct={}", memberId, itemCount, correct);
+		metrics.result("quiz_submit_result_total",
+			"result", "success",
+			"had_wrong", anyWrong ? "true" : "false"
+		);
 		return resp;
 	}
 

@@ -1,10 +1,14 @@
 package com.grow.notification_service.notification.application.service.impl;
 
+import com.grow.notification_service.global.metrics.NotificationMetrics;
 import com.grow.notification_service.notification.application.event.dto.NotificationSavedEvent;
 import com.grow.notification_service.notification.application.service.NotificationService;
 import com.grow.notification_service.notification.domain.model.Notification;
 import com.grow.notification_service.notification.domain.repository.NotificationRepository;
 import com.grow.notification_service.notification.presentation.dto.NotificationRequestDto;
+
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -39,7 +43,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher publisher; // 이벤트 발행
-
+    private final NotificationMetrics metrics;
     /**
      * 알림을 처리하는 엔트리 포인트입니다. DB 저장 후 이벤트를 발행합니다.
      * 이 메서드는 비동기(@Async)로 실행되며, 트랜잭션(@Transactional) 내에서 동작합니다.
@@ -56,13 +60,25 @@ public class NotificationServiceImpl implements NotificationService {
     @Async
     @Override
     @Transactional
+    @Timed(value = "notification_process_latency")
+    @Counted(value = "notification_process_total")
     public void processNotification(NotificationRequestDto request) {
-        // 1. DB에 알림 저장
-        saveNotification(request);
-        // 2. 푸시 알림 전송 이벤트 발행
-        publisher.publishEvent(new NotificationSavedEvent(this, request)); // SSE 트리거 이벤트 발행
-        log.info("[Notification] 알림 이벤트 발행 완료 - memberId: {}, content: {}",
-                request.getMemberId(), request.getContent());
+        try {
+            saveNotification(request);
+            publisher.publishEvent(new NotificationSavedEvent(this, request));
+
+            metrics.result("notification_saved_total",
+                "result", "success",
+                "type", request.getNotificationType().name()
+            );
+        } catch (Exception e) {
+            metrics.result("notification_saved_total",
+                "result", "error",
+                "type", request.getNotificationType().name(),
+                "exception", e.getClass().getSimpleName()
+            );
+            throw e;
+        }
     }
 
     /**
