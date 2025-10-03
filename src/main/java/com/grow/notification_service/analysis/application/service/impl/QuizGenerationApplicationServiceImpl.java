@@ -22,12 +22,15 @@ import com.grow.notification_service.analysis.infra.llm.JsonSchemas;
 import com.grow.notification_service.analysis.infra.llm.LlmJsonSanitizer;
 import com.grow.notification_service.global.exception.AnalysisException;
 import com.grow.notification_service.global.exception.ErrorCode;
+import com.grow.notification_service.global.metrics.NotificationMetrics;
 import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.application.mapping.SkillTagToCategoryRegistry;
 import com.grow.notification_service.quiz.domain.model.Quiz;
 import com.grow.notification_service.quiz.domain.repository.QuizRepository;
 import com.grow.notification_service.quiz.infra.persistence.enums.QuizLevel;
 
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +45,7 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 	private final SkillTagToCategoryRegistry skillTagToCategoryRegistry;
 	private final MemberQuizResultPort memberQuizResultPort;
 	private final QuizNotificationProducer quizNotificationProducer;
+	private final NotificationMetrics metrics;
 
 	/**
 	 * LLM으로 5문제 생성 -> 파싱 -> 저장 후 반환
@@ -52,6 +56,8 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 	 */
 	@Override
 	@Transactional
+	@Timed(value = "quiz_generate_latency")
+	@Counted(value = "quiz_generate_total")
 	public List<Quiz> generateAndSave(Long memberId, Long categoryId, String levelParam, String topic) {
 		boolean randomMode = isRandom(levelParam);
 		QuizLevel forcedLevel = randomMode ? null : parseLevelOrNull(levelParam);
@@ -60,6 +66,10 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 
 		log.info("[QUIZ][GEN][START] memberId={}, categoryId={}, levelParam={}, topic={}",
 			memberId, categoryId, levelParam, topic);
+
+		String levelLabel = (randomMode || forcedLevel == null)
+			? "random"
+			: forcedLevel.name().toLowerCase();
 
 		try {
 			// LLM 호출
@@ -89,13 +99,23 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 				saved.stream().map(Quiz::getQuizId).toList(),
 				false
 			);
-
+			metrics.result("quiz_generate_result_total",
+				"source", "plain",
+				"level", levelLabel,
+				"result", "success"
+			);
 			return saved;
 
 		} catch (AnalysisException ae) {
 			throw ae;
 		} catch (Exception e) {
 			log.error("[QUIZ][GEN] 처리 실패 - memberId={}, categoryId={}, err={}", memberId, categoryId, e.toString(), e);
+			metrics.result("quiz_generate_result_total",
+				"source", "plain",
+				"level", levelLabel,
+				"result", "error",
+				"exception", e.getClass().getSimpleName()
+			);
 			throw new AnalysisException(ErrorCode.ANALYSIS_UNEXPECTED_FAILED, e);
 		}
 	}
@@ -110,7 +130,12 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 	 */
 	@Override
 	@Transactional
+	@Timed(value = "quiz_generate_from_wrong_latency")
+	@Counted(value = "quiz_generate_from_wrong_total")
 	public List<Quiz> generateQuizzesFromWrong(Long memberId, Long categoryId, String levelParam, String topic) {
+		boolean randomMode = isRandom(levelParam);
+		QuizLevel forcedLevel = randomMode ? null : parseLevelOrNull(levelParam);
+
 		log.info("[QUIZ][GEN][FROM_WRONG][START] memberId={}, categoryId={}, levelParam={}, topic={}",
 			memberId, categoryId, levelParam, topic);
 
@@ -120,7 +145,6 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 		List<Quiz> wrongQuizzes = wrongIds.isEmpty() ? List.of() : quizRepository.findByIds(wrongIds);
 		Map<Long, Quiz> byId = wrongQuizzes.stream().collect(Collectors.toMap(Quiz::getQuizId, q -> q));
 
-		// 카테고리 필터링
 		if (categoryId != null) {
 			wrongIds = wrongIds.stream()
 				.filter(id -> byId.containsKey(id) && categoryId.equals(byId.get(id).getCategoryId()))
@@ -132,78 +156,98 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 		String itemsJson = buildItemsJson(byId, wrongIds);
 
 		// 평균 난이도 계산
-		QuizLevel avgLevel = averageLevel(wrongIds, byId); // 없으면 null 반환
+		QuizLevel avgLevel = averageLevel(wrongIds, byId); // 없으면 null
 		log.info("[QUIZ][GEN][FROM_WRONG] 평균 난이도 계산 - avgLevel={}", avgLevel);
 
 		// levelParam이 RANDOM/빈값/AUTO면 평균 사용(있으면 강제, 없으면 RANDOM)
 		boolean isRandomInput = isRandom(levelParam);
 		boolean useAverage = isRandomInput || "AUTO".equalsIgnoreCase(levelParam);
 
-		// 사용자가 명시했으면 우선, 아니면 평균 난이도로 강제 / 없으면 RANDOM
-		QuizLevel forcedLevel;
-		boolean randomMode;
-
-
 		if (useAverage && avgLevel != null) {
-			forcedLevel = avgLevel; // 평균으로 강제
-			randomMode = false;
+			forcedLevel = avgLevel;      // 평균으로 강제
+			randomMode  = false;
 		} else if (isRandomInput) {
-			forcedLevel = null; // 평균도 없고 입력은 RANDOM -> 진짜 랜덤
-			randomMode = true;
+			forcedLevel = null;          // 진짜 랜덤
+			randomMode  = true;
 		} else {
 			forcedLevel = parseLevelOrNull(levelParam); // 사용자 명시 우선
-			randomMode = false;
+			// 만약 사용자가 이상한 값 주면 안전하게 RANDOM 처리
+			if (forcedLevel == null) {
+				randomMode = true;
+			} else {
+				randomMode = false;
+			}
 		}
 
+		// 프롬프트용 레벨 문자열 (NPE 방지)
 		String levelForPrompt = randomMode ? "RANDOM" : forcedLevel.name();
+
+		// 메트릭 라벨은 최종 결정 후 계산
+		String levelLabel = randomMode ? "random" : forcedLevel.name().toLowerCase();
+
 		log.info("[QUIZ][GEN][FROM_WRONG] 평균 난이도={}, userParam={}, 최종레벨={}, randomMode={}",
 			avgLevel, levelParam, levelForPrompt, randomMode);
 
-		// 3) LLM 호출
-		String system = QuizPrompt.GENERATE_FROM_WRONG.getSystem();
-		String user = buildQuizFromWrongUserPrompt(itemsJson, categoryId, levelForPrompt, topic);
-		log.debug("[QUIZ][GEN][FROM_WRONG][PROMPT] system={}, user={}", system, user);
+		try {
+			// 3) LLM 호출
+			String system = QuizPrompt.GENERATE_FROM_WRONG.getSystem();
+			String user = buildQuizFromWrongUserPrompt(itemsJson, categoryId, levelForPrompt, topic);
+			log.debug("[QUIZ][GEN][FROM_WRONG][PROMPT] system={}, user={}", system, user);
 
-		String raw  = llm.generateJson(system, user, JsonSchemas.quizArray());
-		String json = LlmJsonSanitizer.sanitize(raw, true);
-		log.info("[QUIZ][GEN][FROM_WRONG][LLM] 호출 완료 - rawLen={}, sanitizedLen={}",
-			raw == null ? 0 : raw.length(), json == null ? 0 : json.length());
+			String raw  = llm.generateJson(system, user, JsonSchemas.quizArray());
+			String json = LlmJsonSanitizer.sanitize(raw, true);
+			log.info("[QUIZ][GEN][FROM_WRONG][LLM] 호출 완료 - rawLen={}, sanitizedLen={}",
+				raw == null ? 0 : raw.length(), json == null ? 0 : json.length());
 
-		// 4) 파싱/검증/중복제거
-		List<Quiz> parsed = parseQuizArray(json, categoryId, forcedLevel, randomMode);
-		log.info("[QUIZ][GEN][FROM_WRONG][PARSE] parsedCount={}", parsed.size());
+			// 4) 파싱/검증/중복제거
+			List<Quiz> parsed = parseQuizArray(json, categoryId, forcedLevel, randomMode);
+			log.info("[QUIZ][GEN][FROM_WRONG][PARSE] parsedCount={}", parsed.size());
 
-		// 세션 내 중복 제거 + DB 중복 제거
-		List<Quiz> filtered = new ArrayList<>(5);
-		Set<String> seen = new HashSet<>();
-		for (Quiz q : parsed) {
-			String norm = q.getQuestion().trim().replaceAll("\\s+"," ").toLowerCase();
-			if (!seen.add(norm)) {
-				log.info("[QUIZ][GEN][FROM_WRONG] 세션 중복 스킵 - q='{}'", q.getQuestion());
-				continue;
+			List<Quiz> filtered = new ArrayList<>(5);
+			Set<String> seen = new HashSet<>();
+			for (Quiz q : parsed) {
+				String norm = q.getQuestion().trim().replaceAll("\\s+"," ").toLowerCase();
+				if (!seen.add(norm)) {
+					log.info("[QUIZ][GEN][FROM_WRONG] 세션 중복 스킵 - q='{}'", q.getQuestion());
+					continue;
+				}
+				if (quizRepository.existsByCategoryIdAndQuestion(categoryId, q.getQuestion())) {
+					log.info("[QUIZ][GEN][FROM_WRONG] DB 중복 스킵 - q='{}'", q.getQuestion());
+					continue;
+				}
+				filtered.add(q);
 			}
-			if (quizRepository.existsByCategoryIdAndQuestion(categoryId, q.getQuestion())) {
-				log.info("[QUIZ][GEN][FROM_WRONG] DB 중복 스킵 - q='{}'", q.getQuestion());
-				continue;
+
+			// 5) 저장
+			List<Quiz> saved = new ArrayList<>(filtered.size());
+			for (Quiz q : filtered) {
+				saved.add(quizRepository.save(q));
 			}
-			filtered.add(q);
+			log.info("[QUIZ][GEN][FROM_WRONG][END] 저장 완료 - requested=5, saved={}", saved.size());
+
+			quizNotificationProducer.quizGenerated(
+				memberId,
+				categoryId,
+				saved.stream().map(Quiz::getQuizId).toList(),
+				true
+			);
+
+			metrics.result("quiz_generate_result_total",
+				"source", "from_wrong",
+				"level", levelLabel,
+				"result", "success"
+			);
+			return saved;
+
+		} catch (Exception e) {
+			metrics.result("quiz_generate_result_total",
+				"source", "from_wrong",
+				"level", levelLabel,
+				"result", "error",
+				"exception", e.getClass().getSimpleName()
+			);
+			throw new AnalysisException(ErrorCode.ANALYSIS_UNEXPECTED_FAILED, e);
 		}
-
-		// 5) 저장
-		List<Quiz> saved = new ArrayList<>(filtered.size());
-		for (Quiz q : filtered) {
-			saved.add(quizRepository.save(q));
-		}
-		log.info("[QUIZ][GEN][FROM_WRONG][END] 저장 완료 - requested=5, saved={}", saved.size());
-
-		quizNotificationProducer.quizGenerated(
-			memberId,
-			categoryId,
-			saved.stream().map(Quiz::getQuizId).toList(),
-			true
-		);
-
-		return saved;
 	}
 
 	// 헬퍼 메서드

@@ -14,6 +14,7 @@ import com.grow.notification_service.analysis.infra.llm.JsonSchemas;
 import com.grow.notification_service.analysis.infra.llm.LlmJsonSanitizer;
 import com.grow.notification_service.global.exception.AnalysisException;
 import com.grow.notification_service.global.exception.ErrorCode;
+import com.grow.notification_service.global.metrics.NotificationMetrics;
 import com.grow.notification_service.quiz.application.mapping.SkillTagToCategoryRegistry;
 import com.grow.notification_service.quiz.application.port.MemberQuizResultPort;
 import com.grow.notification_service.quiz.domain.model.Quiz;
@@ -21,6 +22,8 @@ import com.grow.notification_service.quiz.domain.repository.QuizRepository;
 import com.grow.notification_service.analysis.domain.model.KeywordConcept;
 import com.grow.notification_service.analysis.domain.repository.KeywordConceptRepository;
 
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,6 +49,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	private final AnalysisNotificationProducer analysisNotificationProducer;
 	private final GroupMembershipPort groupMembershipPort;
 	private final SkillTagToCategoryRegistry skillTagToCategoryRegistry;
+	private final NotificationMetrics metrics;
 
 	/**
 	 * 그룹 스킬태그 기반 학습/취미 로드맵 생성
@@ -57,6 +61,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	 */
 	@Override
 	@Transactional
+	@Timed(value = "analysis_analyze_latency")
+	@Counted(value = "analysis_analyze_total")
 	public Analysis analyze(Long memberId, String category, Long groupId) {
 		log.info("[ANALYSIS][ROADMAP][VERIFY] mid={}, category={}, gid={}", memberId, category, groupId);
 
@@ -74,7 +80,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		// 2) 그룹명/스킬태그 확보
 		GroupMembershipPort.GroupSimpleResponse auth = found.get();
 		String groupName = auth.groupName();
-		String skillTag  = auth.skillTag();
+		String skillTag = auth.skillTag();
 
 		// 3) 스킬태그 -> 내부 categoryId 매핑
 		Long categoryId;
@@ -124,18 +130,21 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 				analysisNotificationProducer.analysisCompleted(memberId);
 				log.info("[ANALYSIS][ROADMAP][REUSE] reused from analysisId={}, saved={}",
 					existing.get().getAnalysisId(), saved.getAnalysisId());
+				metrics.result("analysis_analyze_result_total", "type", "roadmap", "result", "success");
 				return saved;
 			} catch (Exception e) {
-				log.error("[ANALYSIS][ROADMAP][REUSE] wrap failed - err={}", e.toString(), e);
+				metrics.result("analysis_analyze_result_total", "type", "roadmap", "result", "error", "exception",
+					e.getClass().getSimpleName());
+				log.error("[ANALYSIS][ROADMAP][REUSE] wrap failed - err={}", e, e);
 				throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
 			}
 		}
 
 		// 7) LLM 호출 (스킬태그/그룹명 기반)
 		String systemPrompt = prompt.getSystem();
-		String userPrompt   = buildRoadmapUserPrompt(groupName, skillTag);
-		String raw          = llmClient.generateJson(systemPrompt, userPrompt, JsonSchemas.roadmap());
-		String safe         = LlmJsonSanitizer.sanitize(raw, false);
+		String userPrompt = buildRoadmapUserPrompt(groupName, skillTag);
+		String raw = llmClient.generateJson(systemPrompt, userPrompt, JsonSchemas.roadmap());
+		String safe = LlmJsonSanitizer.sanitize(raw, false);
 		log.info("[ANALYSIS][ROADMAP] LLM done - rawLen={}, safeLen={}",
 			raw == null ? 0 : raw.length(), safe == null ? 0 : safe.length());
 
@@ -160,13 +169,16 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, sessionId, resultJson));
 			analysisNotificationProducer.analysisCompleted(memberId);
 			log.info("[ANALYSIS][ROADMAP][END] saved analysisId={}", saved.getAnalysisId());
+
+			metrics.result("analysis_analyze_result_total", "type", "roadmap", "result", "success");
 			return saved;
 		} catch (Exception e) {
-			log.error("[ANALYSIS][ROADMAP] persist/serialize failed - err={}", e.toString(), e);
+			log.error("[ANALYSIS][ROADMAP] persist/serialize failed - err={}", e, e);
+			metrics.result("analysis_analyze_result_total", "type", "roadmap", "result", "error",
+				"exception", e.getClass().getSimpleName());
 			throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
 		}
 	}
-
 
 	/**
 	 * 틀린 문제 기반 학습 가이드 생성
@@ -176,6 +188,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	 */
 	@Override
 	@Transactional
+	@Timed(value = "analysis_focus_latency")
+	@Counted(value = "analysis_focus_total")
 	public Analysis analyzeQuiz(Long memberId, Long categoryId) {
 		log.info("[ANALYSIS][FOCUS][START] 종합 학습 가이드 시작 - memberId={}, categoryId={}", memberId, categoryId);
 
@@ -206,7 +220,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		String kwSystem = AnalysisPrompt.FOCUS_KEYWORDS.getSystem();
 		log.debug("[ANALYSIS][FOCUS] KEYWORDS 프롬프트 준비 완료");
 
-		String kwRaw  = llmClient.generateJson(kwSystem, kwUserPrompt, JsonSchemas.focusKeywords());
+		String kwRaw = llmClient.generateJson(kwSystem, kwUserPrompt, JsonSchemas.focusKeywords());
 		String kwJson = LlmJsonSanitizer.sanitize(kwRaw, false);
 		log.info("[ANALYSIS][FOCUS] KEYWORDS LLM 호출 완료 - rawLen={}, sanitizedLen={}",
 			kwRaw == null ? 0 : kwRaw.length(), kwJson == null ? 0 : kwJson.length());
@@ -249,7 +263,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			String sumSystem = AnalysisPrompt.FOCUS_SUMMARY.getSystem();
 			log.debug("[ANALYSIS][FOCUS] SUMMARY 프롬프트 준비 완료");
 
-			String sumRaw  = llmClient.generateJson(sumSystem, sumUserPrompt, JsonSchemas.focusSummary());
+			String sumRaw = llmClient.generateJson(sumSystem, sumUserPrompt, JsonSchemas.focusSummary());
 			String sumJson = LlmJsonSanitizer.sanitize(sumRaw, false);
 			log.info("[ANALYSIS][FOCUS] SUMMARY LLM 호출 완료 - rawLen={}, sanitizedLen={}",
 				sumRaw == null ? 0 : sumRaw.length(), sumJson == null ? 0 : sumJson.length());
@@ -292,7 +306,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			String futSystem = AnalysisPrompt.FOCUS_FUTURE.getSystem();
 			log.debug("[ANALYSIS][FOCUS] FUTURE 프롬프트 준비 완료");
 
-			String futRaw  = llmClient.generateJson(futSystem, futUserPrompt, JsonSchemas.futureOnly());
+			String futRaw = llmClient.generateJson(futSystem, futUserPrompt, JsonSchemas.futureOnly());
 			String futJson = LlmJsonSanitizer.sanitize(futRaw, false);
 			log.info("[ANALYSIS][FOCUS] FUTURE LLM 호출 완료 - rawLen={}, sanitizedLen={}",
 				futRaw == null ? 0 : futRaw.length(), futJson == null ? 0 : futJson.length());
@@ -326,10 +340,13 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			String finalJson = objectMapper.writeValueAsString(out);
 			Analysis saved = analysisRepository.save(new Analysis(memberId, categoryId, null, finalJson));
 			analysisNotificationProducer.analysisCompleted(memberId);
+			metrics.result("analysis_analyze_result_total", "type", "focus", "result", "success");
 			return saved;
 		} catch (Exception e) {
 			log.error("[ANALYSIS][FOCUS] 분석 결과 직렬화 실패 - memberId={}, categoryId={}, err={}",
 				memberId, categoryId, e, e);
+			metrics.result("analysis_analyze_result_total", "type", "focus", "result", "error",
+				"exception", e.getClass().getSimpleName());
 			throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
 		}
 	}
@@ -344,6 +361,8 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 	 */
 	@Override
 	@Transactional
+	@Timed(value = "analysis_focus_selected_latency")
+	@Counted(value = "analysis_focus_selected_total")
 	public void analyzeFromQuizIds(Long memberId, Long categoryId, String sessionId, List<Long> quizIds) {
 		log.info("[ANALYSIS][FOCUS-SELECTED][START] memberId={}, categoryId={}, sessionId={}, ids={}",
 			memberId, categoryId, sessionId, quizIds);
@@ -351,6 +370,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		if (quizIds == null || quizIds.isEmpty()) {
 			log.debug("[ANALYSIS][FOCUS-SELECTED][SKIP] empty quizIds - memberId={}, categoryId={}",
 				memberId, categoryId);
+			metrics.result("analysis_analyze_result_total", "type", "focus-selected", "result", "skip");
 			return;
 		}
 
@@ -366,6 +386,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		// 필터 결과가 비면 저장 없이 종료
 		if (filtered.isEmpty()) {
 			log.debug("[ANALYSIS][FOCUS-SELECTED][SKIP] filtered empty - mid={}, cid={}", memberId, categoryId);
+			metrics.result("analysis_analyze_result_total", "type", "focus-selected", "result", "skip");
 			return;
 		}
 
@@ -375,7 +396,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		// 3) 키워드 추출
 		String kwUser = buildKeywordsUserPrompt(itemsJson);
 		String kwSystem = AnalysisPrompt.FOCUS_KEYWORDS.getSystem();
-		String kwRaw  = llmClient.generateJson(kwSystem, kwUser, JsonSchemas.focusKeywords());
+		String kwRaw = llmClient.generateJson(kwSystem, kwUser, JsonSchemas.focusKeywords());
 		String kwJson = LlmJsonSanitizer.sanitize(kwRaw, false);
 		List<String> keywords = parseKeywords(kwJson);
 
@@ -402,7 +423,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			String sumUser = buildSummaryUserPrompt(itemsJson, targets);
 			String sumSystem = AnalysisPrompt.FOCUS_SUMMARY.getSystem();
 
-			String sumRaw  = llmClient.generateJson(sumSystem, sumUser, JsonSchemas.focusSummary());
+			String sumRaw = llmClient.generateJson(sumSystem, sumUser, JsonSchemas.focusSummary());
 			String sumJson = LlmJsonSanitizer.sanitize(sumRaw, false);
 
 			// 신규 focusConcepts 파싱 + 저장
@@ -411,7 +432,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			int upserted = 0;
 			for (Map<String, String> fc : focusConceptsNewOnly) {
 				String original = fc.get("keyword");
-				String summary  = fc.get("conceptSummary");
+				String summary = fc.get("conceptSummary");
 				String norm = normalize(original);
 				try {
 					KeywordConcept saved = keywordConceptRepository.upsert(
@@ -433,7 +454,7 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		} else {
 			String futUser = buildFutureOnlyUserPrompt(itemsJson);
 			String futSystem = AnalysisPrompt.FOCUS_FUTURE.getSystem();
-			String futRaw  = llmClient.generateJson(futSystem, futUser, JsonSchemas.futureOnly());
+			String futRaw = llmClient.generateJson(futSystem, futUser, JsonSchemas.futureOnly());
 			String futJson = LlmJsonSanitizer.sanitize(futRaw, false);
 			futureConcepts = parseFutureConcepts(futJson);
 		}
@@ -468,7 +489,10 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			log.info("[ANALYSIS][FOCUS-SELECTED][END] saved analysisId={}, focus={}, future={}",
 				saved.getAnalysisId(), mergedFocus.size(), futureConcepts.size());
 			analysisNotificationProducer.focusGuideReady(memberId);
+			metrics.result("analysis_analyze_result_total", "type", "focus-selected", "result", "success");
 		} catch (Exception e) {
+			metrics.result("analysis_analyze_result_total", "type", "focus-selected", "result", "error",
+				"exception", e.getClass().getSimpleName());
 			throw new AnalysisException(ErrorCode.ANALYSIS_OUTPUT_SERIALIZE_FAILED, e);
 		}
 	}
@@ -680,27 +704,27 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 		String grp = (groupName == null || groupName.isBlank()) ? "미지정 그룹" : groupName;
 
 		return """
-    {
-      "input": {
-        "platform": "GROW",
-        "mode": "GROUP_SKILLTAG_ROADMAP_SCHEDULE_AUTO",
-        "skillTag": "%s",
-        "groupName": "%s",
-        "periodPolicy": {
-          "infer": true,
-          "guideline": {
-            "minWeeks": 4,
-            "maxWeeks": 12,
-            "preferredHoursPerWeek": [3, 8],
-            "notes": [
-              "선행지식/학습 난이도에 따라 총주차와 주당시간을 합리적으로 산정",
-              "주차별 예상시간은 기간설정의 주당시간을 과도하게 벗어나지 않게 배분"
-            ]
-          }
-        }
-      }
-    }
-    """.formatted(tag, grp);
+			{
+			  "input": {
+			    "platform": "GROW",
+			    "mode": "GROUP_SKILLTAG_ROADMAP_SCHEDULE_AUTO",
+			    "skillTag": "%s",
+			    "groupName": "%s",
+			    "periodPolicy": {
+			      "infer": true,
+			      "guideline": {
+			        "minWeeks": 4,
+			        "maxWeeks": 12,
+			        "preferredHoursPerWeek": [3, 8],
+			        "notes": [
+			          "선행지식/학습 난이도에 따라 총주차와 주당시간을 합리적으로 산정",
+			          "주차별 예상시간은 기간설정의 주당시간을 과도하게 벗어나지 않게 배분"
+			        ]
+			      }
+			    }
+			  }
+			}
+			""".formatted(tag, grp);
 	}
 
 	/**
@@ -714,8 +738,10 @@ public class AnalysisApplicationServiceImpl implements AnalysisApplicationServic
 			.trim()
 			.toUpperCase(Locale.ROOT);
 
-		if (c.startsWith("HOBBY")) return AnalysisPrompt.ROADMAP_HOBBY;
-		if (c.startsWith("STUDY")) return AnalysisPrompt.ROADMAP_STUDY;
+		if (c.startsWith("HOBBY"))
+			return AnalysisPrompt.ROADMAP_HOBBY;
+		if (c.startsWith("STUDY"))
+			return AnalysisPrompt.ROADMAP_STUDY;
 
 		// unknown category는 기본 STUDY로 처리
 		return AnalysisPrompt.ROADMAP_STUDY;

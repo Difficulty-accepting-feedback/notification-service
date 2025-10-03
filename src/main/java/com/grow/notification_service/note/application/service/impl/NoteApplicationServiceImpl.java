@@ -1,5 +1,6 @@
 package com.grow.notification_service.note.application.service.impl;
 
+import com.grow.notification_service.global.metrics.NotificationMetrics;
 import com.grow.notification_service.note.application.dto.NotePageResponse;
 import com.grow.notification_service.note.application.dto.NoteResponse;
 import com.grow.notification_service.note.application.event.NoteNotificationProducer;
@@ -8,6 +9,9 @@ import com.grow.notification_service.note.application.service.NoteApplicationSer
 import com.grow.notification_service.note.presentation.dto.SendNoteRequest;
 import com.grow.notification_service.note.domain.model.Note;
 import com.grow.notification_service.note.domain.repository.NoteRepository;
+
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,41 +27,67 @@ public class NoteApplicationServiceImpl implements NoteApplicationService {
 	private final NoteRepository noteRepository;
 	private final MemberPort memberPort;
 	private final NoteNotificationProducer noteNotificationProducer;
-
+	private final NotificationMetrics metrics;
 	/**
 	 * 새 쪽지 생성, 저장
 	 * 도메인 팩토리를 통해 불변 조건을 검증하고 저장
 	 */
 	@Override
 	@Transactional
+	@Timed(value = "note_send_latency")
+	@Counted(value = "note_send_total")
 	public NoteResponse send(Long senderId, SendNoteRequest req) {
-		// 닉네임 -> memberId 변환
-		MemberPort.ResolveResult resolved =
-			memberPort.resolveByNickname(req.recipientNickname());
-
-		// 전송 시점 닉네임 확보
-		String senderNick = memberPort.getMemberName(senderId);
-		String recipientNick = resolved.nickname();
-
-		// 저장 (스냅샷)
-		Note saved = noteRepository.save(
-			Note.create(senderId, resolved.memberId(), req.content(), senderNick, recipientNick)
-		);
-
-		log.info("[쪽지] 전송 완료 - senderId={}, recipientId={}, noteId={}",
-			senderId, saved.getRecipientId(), saved.getNoteId());
-
-		// 쪽지 도착 알림 이벤트 발행
-		Long recipientMemberId = saved.getRecipientId();
-		Long noteId = saved.getNoteId();
 		try {
-			noteNotificationProducer.noteReceived(recipientMemberId, noteId);
-			log.info("[쪽지][알림][발행] recipient={}, noteId={}", recipientMemberId, noteId);
+			// 닉네임 -> memberId 변환
+			MemberPort.ResolveResult resolved =
+				memberPort.resolveByNickname(req.recipientNickname());
+
+			// 전송 시점 닉네임 확보
+			String senderNick = memberPort.getMemberName(senderId);
+			String recipientNick = resolved.nickname();
+
+			// 저장 (스냅샷)
+			Note saved = noteRepository.save(
+				Note.create(senderId, resolved.memberId(), req.content(), senderNick, recipientNick)
+			);
+
+			log.info("[쪽지] 전송 완료 - senderId={}, recipientId={}, noteId={}",
+				senderId, saved.getRecipientId(), saved.getNoteId());
+
+			metrics.result("note_send_result_total",
+				"result", "success"
+			);
+
+			// 쪽지 도착 알림 이벤트 발행
+			Long recipientMemberId = saved.getRecipientId();
+			Long noteId = saved.getNoteId();
+			try {
+				noteNotificationProducer.noteReceived(recipientMemberId, noteId);
+				log.info("[쪽지][알림][발행] recipient={}, noteId={}", recipientMemberId, noteId);
+
+				metrics.result("note_event_publish_result_total",
+					"result", "success"
+				);
+			} catch (Exception e) {
+				log.warn("[쪽지][알림][발행실패] recipient={}, noteId={}, err={}",
+					recipientMemberId, noteId, e.toString(), e);
+
+				// ▶ 이벤트 발행 메트릭: 실패
+				metrics.result("note_event_publish_result_total",
+					"result", "error",
+					"exception", e.getClass().getSimpleName()
+				);
+			}
+
+			return NoteResponse.from(saved);
+
 		} catch (Exception e) {
-			log.warn("[쪽지][알림][발행실패] recipient={}, noteId={}, err={}",
-				recipientMemberId, noteId, e.toString(), e);
+			metrics.result("note_send_result_total",
+				"result", "error",
+				"exception", e.getClass().getSimpleName()
+			);
+			throw e;
 		}
-		return NoteResponse.from(saved);
 	}
 
 	/**

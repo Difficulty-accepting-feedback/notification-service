@@ -34,7 +34,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/analysis")
+@RequestMapping("/api/v1/notification/analysis")
 @RequiredArgsConstructor
 public class AnalysisController {
 

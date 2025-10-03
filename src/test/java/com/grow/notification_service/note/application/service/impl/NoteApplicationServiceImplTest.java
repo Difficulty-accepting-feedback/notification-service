@@ -1,12 +1,15 @@
 package com.grow.notification_service.note.application.service.impl;
 
 import com.grow.notification_service.common.exception.DomainException;
+import com.grow.notification_service.global.metrics.NotificationMetrics;
 import com.grow.notification_service.note.application.dto.NotePageResponse;
 import com.grow.notification_service.note.application.dto.NoteResponse;
+import com.grow.notification_service.note.application.event.NoteNotificationProducer;
 import com.grow.notification_service.note.application.port.MemberPort;
 import com.grow.notification_service.note.domain.model.Note;
 import com.grow.notification_service.note.domain.repository.NoteRepository;
 import com.grow.notification_service.note.presentation.dto.SendNoteRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,8 +29,7 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class NoteApplicationServiceImplTest {
@@ -38,15 +40,27 @@ class NoteApplicationServiceImplTest {
 	@Mock
 	private MemberPort memberPort;
 
+	@Mock
+	private NoteNotificationProducer noteNotificationProducer;
+
+	@Mock
+	private NotificationMetrics metrics;
+
 	@InjectMocks
 	private com.grow.notification_service.note.application.service.impl.NoteApplicationServiceImpl service;
+
+	@BeforeEach
+	void setUp() {
+		lenient().doNothing().when(metrics).result(anyString(), any(String[].class));
+		lenient().doNothing().when(noteNotificationProducer).noteReceived(anyLong(), anyLong());
+	}
 
 	@Nested
 	@DisplayName("쪽지 전송")
 	class SendTests {
 
 		@Test
-		@DisplayName("정상 전송 시 NoteResponse 반환 (닉네임 → memberId 해석)")
+		@DisplayName("정상 전송 시 NoteResponse 반환 (닉네임 → memberId 해석) + 수신 알림 이벤트 발행 1건")
 		void send_success() {
 			Long senderId = 1L;
 			String recipientNickname = "상대닉";
@@ -79,6 +93,8 @@ class NoteApplicationServiceImplTest {
 			verify(memberPort).resolveByNickname(recipientNickname);
 			verify(memberPort).getMemberName(senderId);
 			verify(noteRepository).save(any(Note.class));
+
+			verify(noteNotificationProducer, times(1)).noteReceived(eq(recipientId), eq(10L));
 		}
 
 		@Test
@@ -94,6 +110,10 @@ class NoteApplicationServiceImplTest {
 			given(memberPort.getMemberName(senderId)).willReturn("나");
 
 			assertThrows(DomainException.class, () -> service.send(senderId, req));
+
+			// 실패 경로에서 저장/이벤트가 실행되지 않았는지 간단 체크(선택)
+			verify(noteRepository, never()).save(any(Note.class));
+			verify(noteNotificationProducer, never()).noteReceived(anyLong(), anyLong());
 		}
 	}
 
