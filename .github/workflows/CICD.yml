@@ -1,4 +1,4 @@
-name: CI
+name: CICD
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod 777 ./gradlew
 
-        # Gradle 캐시 설정 (빌드 속도 향상)
+      # Gradle 캐시 설정 (빌드 속도 향상)
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
@@ -42,16 +42,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # 임시 설정 -> 추후 ConfigMap 활용 예정
       - name: create application.yml
         run: echo "${{ secrets.APPLICATION_PROPERTIES }}" | base64 --decode > src/main/resources/application.yml
 
-      - name: create application-test.yml
-        run: echo "${{ secrets.APPLICATION_TEST_PROPERTIES }}" | base64 --decode > src/main/resources/application-test.yml
-
       # Gradle 빌드 실행 + 테스트를 포함
       - name: Build with Gradle
-        run: ./gradlew clean build --no-daemon -Djava.net.preferIPv4Stack=true -Dspring.profiles.active=ci
+        run: ./gradlew clean build --no-daemon
 
       # 이미지를 만들고 DockerHub 에 Push
       - name: Login to DockerHub
@@ -61,7 +57,23 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker
-        run: docker build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/notification-server .
-
+        run: docker build --platform linux/arm64 -t ${{ secrets.DOCKERHUB_USERNAME }}/grow-notification-server .
       - name: Push Docker
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/notification-server:latest
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/grow-notification-server:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Kubernetes on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          username: ubuntu
+          host: ${{ secrets.GROW_NOTIFICATION_SERVER_PUBLIC }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          # CI/CD 안정성을 위해 pull 추가
+          script: |
+            docker image prune -a -f 
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/grow-notification-server:latest
+            kubectl apply -f deployment.yaml
