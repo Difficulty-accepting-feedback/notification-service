@@ -9,7 +9,7 @@ public class WebCorsConfig implements WebMvcConfigurer {
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
 		registry.addMapping("/**")
-			.allowedOriginPatterns("http://localhost:*")
+			.allowedOriginPatterns("https://www.groow.store")
 			.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
 			.allowedHeaders(
 				"X-Authorization-Id",
