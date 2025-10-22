@@ -36,11 +36,11 @@ public final class JsonSchemas {
 				"question", Schema.builder().type("string").build(),
 				"choices", choicesArray(),
 				"answer", Schema.builder().type("string").build(),
-				"explain", Schema.builder().type("string").build(),
+				"explanation", Schema.builder().type("string").build(),
 				"level", levelEnum(),
 				"categoryId", Schema.builder().type("integer").build() // 필요 시 "number"
 			))
-			.required(List.of("question", "choices", "answer", "explain", "level", "categoryId"))
+			.required(List.of("question", "choices", "answer", "explanation", "level", "categoryId"))
 			.build();
 	}
 

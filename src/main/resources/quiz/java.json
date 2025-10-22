@@ -8,7 +8,7 @@
       "execute(String[] args)"
     ],
     "answer": "main(String[] args)",
-    "explain": "자바 애플리케이션은 public static void main(String[] args) 메서드에서 시작한다.",
+    "explanation": "자바 애플리케이션은 public static void main(String[] args) 메서드에서 시작한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -16,7 +16,7 @@
     "question": "자바에서 문자열을 표현하는 클래스는?",
     "choices": ["String", "Text", "Chars", "BufferString"],
     "answer": "String",
-    "explain": "문자열은 java.lang.String 클래스로 표현되며 불변(immutable)이다.",
+    "explanation": "문자열은 java.lang.String 클래스로 표현되며 불변(immutable)이다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -24,7 +24,7 @@
     "question": "자바에서 한 줄 주석을 시작하는 기호는?",
     "choices": ["/*", "//", "#", "<!--"],
     "answer": "//",
-    "explain": "한 줄 주석은 //, 여러 줄 주석은 /* ... */ 형식을 사용한다.",
+    "explanation": "한 줄 주석은 //, 여러 줄 주석은 /* ... */ 형식을 사용한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -32,7 +32,7 @@
     "question": "int형 변수의 기본 초기값(필드 기준)은?",
     "choices": ["0", "null", "undefined", "1"],
     "answer": "0",
-    "explain": "클래스 필드(멤버 변수)의 int 기본값은 0이다. 지역 변수는 반드시 초기화해야 한다.",
+    "explanation": "클래스 필드(멤버 변수)의 int 기본값은 0이다. 지역 변수는 반드시 초기화해야 한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -40,7 +40,7 @@
     "question": "자바에서 배열의 인덱스는 몇부터 시작하는가?",
     "choices": ["0", "1", "-1", "2"],
     "answer": "0",
-    "explain": "자바 배열은 0부터 시작한다.",
+    "explanation": "자바 배열은 0부터 시작한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -48,7 +48,7 @@
     "question": "자동 박싱/언박싱과 관련된 래퍼 타입 중 int에 해당하는 것은?",
     "choices": ["Integer", "Int", "Number", "Long"],
     "answer": "Integer",
-    "explain": "기본형 int의 래퍼 타입은 Integer다. 자동 박싱/언박싱을 지원한다.",
+    "explanation": "기본형 int의 래퍼 타입은 Integer다. 자동 박싱/언박싱을 지원한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -56,7 +56,7 @@
     "question": "자바에서 논리형(boolean)의 가능한 값은?",
     "choices": ["true/false", "0/1", "yes/no", "on/off"],
     "answer": "true/false",
-    "explain": "자바의 boolean은 true와 false 두 값만 가진다.",
+    "explanation": "자바의 boolean은 true와 false 두 값만 가진다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -64,7 +64,7 @@
     "question": "다음 중 자바의 기본형(primitive)이 아닌 것은?",
     "choices": ["int", "double", "String", "boolean"],
     "answer": "String",
-    "explain": "String은 참조형(클래스)이며 기본형이 아니다.",
+    "explanation": "String은 참조형(클래스)이며 기본형이 아니다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -72,7 +72,7 @@
     "question": "자바에서 상수를 선언할 때 주로 사용하는 키워드는?",
     "choices": ["final", "const", "static", "let"],
     "answer": "final",
-    "explain": "자바에서 상수는 보통 public static final로 선언한다. const는 예약어이지만 사용되지 않는다.",
+    "explanation": "자바에서 상수는 보통 public static final로 선언한다. const는 예약어이지만 사용되지 않는다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -80,7 +80,7 @@
     "question": "switch 문에서 조건에 사용할 수 없는 타입은(자바 7 기준)?",
     "choices": ["int", "String", "enum", "float"],
     "answer": "float",
-    "explain": "자바 7부터 String, enum, 정수 계열 가능하지만 float/double은 사용할 수 없다.",
+    "explanation": "자바 7부터 String, enum, 정수 계열 가능하지만 float/double은 사용할 수 없다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -88,7 +88,7 @@
     "question": "자바에서 패키지를 선언할 때 사용하는 키워드는?",
     "choices": ["package", "namespace", "module", "group"],
     "answer": "package",
-    "explain": "소스 파일의 최상단에 package 키워드로 패키지를 선언한다.",
+    "explanation": "소스 파일의 최상단에 package 키워드로 패키지를 선언한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -96,7 +96,7 @@
     "question": "System.out.println에서 println의 역할은?",
     "choices": ["입력", "출력", "파일저장", "네트워크전송"],
     "answer": "출력",
-    "explain": "표준 출력 스트림(System.out)에 줄바꿈을 포함하여 출력한다.",
+    "explanation": "표준 출력 스트림(System.out)에 줄바꿈을 포함하여 출력한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -104,7 +104,7 @@
     "question": "다음 중 자바 예약어는?",
     "choices": ["public", "main", "print", "varname"],
     "answer": "public",
-    "explain": "public, class, static 등은 자바 예약어다.",
+    "explanation": "public, class, static 등은 자바 예약어다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -112,7 +112,7 @@
     "question": "문자 하나를 저장하는 기본형 타입은?",
     "choices": ["char", "character", "string", "text"],
     "answer": "char",
-    "explain": "char는 16비트 유니코드 문자를 저장한다.",
+    "explanation": "char는 16비트 유니코드 문자를 저장한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -125,7 +125,7 @@
       "추상 클래스"
     ],
     "answer": "public 클래스",
-    "explain": "하나의 소스 파일에 public 클래스가 있으면 파일명은 그 public 클래스명과 같아야 한다.",
+    "explanation": "하나의 소스 파일에 public 클래스가 있으면 파일명은 그 public 클래스명과 같아야 한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -138,7 +138,7 @@
       "전위는 감소"
     ],
     "answer": "전위는 먼저 증가, 후위는 나중 증가",
-    "explain": "전위 증감은 사용 전 증가, 후위 증감은 사용 후 증가한다.",
+    "explanation": "전위 증감은 사용 전 증가, 후위 증감은 사용 후 증가한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -146,7 +146,7 @@
     "question": "배열 길이를 얻는 방법은?",
     "choices": ["arr.length()", "arr.size()", "arr.length", "length(arr)"],
     "answer": "arr.length",
-    "explain": "자바 배열의 길이는 필드 length로 제공된다(메서드 아님).",
+    "explanation": "자바 배열의 길이는 필드 length로 제공된다(메서드 아님).",
     "level": "EASY",
     "categoryId": 1
   },
@@ -154,7 +154,7 @@
     "question": "문자열 비교에 == 대신 써야 하는 메서드는?",
     "choices": ["compare()", "equals()", "same()", "match()"],
     "answer": "equals()",
-    "explain": "문자열 내용 비교는 equals()를 사용한다. ==는 참조 비교다.",
+    "explanation": "문자열 내용 비교는 equals()를 사용한다. ==는 참조 비교다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -162,7 +162,7 @@
     "question": "자바에서 개행을 의미하는 이스케이프 문자는?",
     "choices": ["\\t", "\\n", "\\r", "\\\\"],
     "answer": "\\n",
-    "explain": "개행(new line)은 \\n, 탭은 \\t, 캐리지 리턴은 \\r 이다.",
+    "explanation": "개행(new line)은 \\n, 탭은 \\t, 캐리지 리턴은 \\r 이다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -170,7 +170,7 @@
     "question": "자바의 패키지 임포트에 사용하는 키워드는?",
     "choices": ["include", "using", "import", "require"],
     "answer": "import",
-    "explain": "다른 패키지의 클래스를 사용할 때 import를 사용한다.",
+    "explanation": "다른 패키지의 클래스를 사용할 때 import를 사용한다.",
     "level": "EASY",
     "categoryId": 1
   },
@@ -184,7 +184,7 @@
       "정적 메서드만 사용"
     ],
     "answer": "같은 이름의 메서드를 매개변수 다르게 정의",
-    "explain": "오버로딩은 동일 이름, 매개변수 시그니처가 다른 메서드를 여러 개 정의하는 것.",
+    "explanation": "오버로딩은 동일 이름, 매개변수 시그니처가 다른 메서드를 여러 개 정의하는 것.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -197,7 +197,7 @@
       "접근 제어자는 더 넓게 가능"
     ],
     "answer": "반환 타입 완전히 무관",
-    "explain": "오버라이딩은 시그니처 동일, 반환 타입은 공변 반환 가능. 완전히 무관하지 않다.",
+    "explanation": "오버라이딩은 시그니처 동일, 반환 타입은 공변 반환 가능. 완전히 무관하지 않다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -210,7 +210,7 @@
       "여러 패키지를 묶는다"
     ],
     "answer": "하나의 타입 참조로 다양한 실제 객체를 다룬다",
-    "explain": "다형성은 상위 타입으로 하위 타입 인스턴스를 참조하여 공통 인터페이스로 동작시키는 개념이다.",
+    "explanation": "다형성은 상위 타입으로 하위 타입 인스턴스를 참조하여 공통 인터페이스로 동작시키는 개념이다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -223,7 +223,7 @@
       "IllegalArgumentException"
     ],
     "answer": "IOException",
-    "explain": "IOException은 반드시 처리(throws 또는 try-catch)가 필요한 Checked Exception이다.",
+    "explanation": "IOException은 반드시 처리(throws 또는 try-catch)가 필요한 Checked Exception이다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -236,7 +236,7 @@
       "Iterable"
     ],
     "answer": "Closeable/AutoCloseable",
-    "explain": "AutoCloseable을 구현한 자원은 try-with-resources로 자동 close 가능하다.",
+    "explanation": "AutoCloseable을 구현한 자원은 try-with-resources로 자동 close 가능하다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -249,7 +249,7 @@
       "네트워크 전송"
     ],
     "answer": "가변 버퍼로 성능 향상",
-    "explain": "문자열 연결 시 불변 String 대신 가변 StringBuilder를 사용하면 효율적이다.",
+    "explanation": "문자열 연결 시 불변 String 대신 가변 StringBuilder를 사용하면 효율적이다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -262,7 +262,7 @@
       "상속 강제"
     ],
     "answer": "변수, 메서드, 클래스 모두 적용 가능",
-    "explain": "final 변수는 재할당 불가, 메서드는 오버라이드 불가, 클래스는 상속 불가를 의미한다.",
+    "explanation": "final 변수는 재할당 불가, 메서드는 오버라이드 불가, 클래스는 상속 불가를 의미한다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -275,7 +275,7 @@
       "스레드 안전을 보장한다"
     ],
     "answer": "읽기 전용 뷰를 반환한다",
-    "explain": "수정 연산 시 UnsupportedOperationException이 발생하는 읽기 전용 뷰를 제공한다.",
+    "explanation": "수정 연산 시 UnsupportedOperationException이 발생하는 읽기 전용 뷰를 제공한다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -288,7 +288,7 @@
       "String"
     ],
     "answer": "변경 가능한 가변 객체",
-    "explain": "키는 equals/hashCode가 안정적으로 유지되어야 하므로 가변 객체는 위험하다.",
+    "explanation": "키는 equals/hashCode가 안정적으로 유지되어야 하므로 가변 객체는 위험하다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -301,7 +301,7 @@
       "추상 메서드만 가짐"
     ],
     "answer": "인터페이스에서 구현이 있는 인스턴스 메서드",
-    "explain": "default 메서드는 인터페이스에서 본문을 제공하는 인스턴스 메서드다.",
+    "explanation": "default 메서드는 인터페이스에서 본문을 제공하는 인스턴스 메서드다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -314,7 +314,7 @@
       "hashCode만 같으면 된다"
     ],
     "answer": "equals가 같으면 hashCode도 같아야 한다",
-    "explain": "equals가 true이면 같은 hashCode를 반환해야 컬렉션 동작이 보장된다.",
+    "explanation": "equals가 true이면 같은 hashCode를 반환해야 컬렉션 동작이 보장된다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -327,7 +327,7 @@
       "인덱스 기반 여부만 동일"
     ],
     "answer": "중복 허용 여부",
-    "explain": "List는 중복 허용, Set은 중복을 허용하지 않는다. 또한 List는 인덱스 기반이다.",
+    "explanation": "List는 중복 허용, Set은 중복을 허용하지 않는다. 또한 List는 인덱스 기반이다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -340,7 +340,7 @@
       "String은 가변, StringBuilder는 불변"
     ],
     "answer": "String은 불변, StringBuilder는 가변",
-    "explain": "String은 수정 시 새 객체를 생성하고, StringBuilder는 내부 버퍼를 변경한다.",
+    "explanation": "String은 수정 시 새 객체를 생성하고, StringBuilder는 내부 버퍼를 변경한다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -353,7 +353,7 @@
       "컬렉션 원소로 저장"
     ],
     "answer": "반환 타입으로 사용",
-    "explain": "Optional은 반환값에서 null 회피를 위해 사용하며, 필드/파라미터/원소로는 권장되지 않는다.",
+    "explanation": "Optional은 반환값에서 null 회피를 위해 사용하며, 필드/파라미터/원소로는 권장되지 않는다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -366,7 +366,7 @@
       "ArrayList"
     ],
     "answer": "ArrayList",
-    "explain": "ArrayList는 동기화를 제공하지 않는다. 필요하면 외부에서 동기화해야 한다.",
+    "explanation": "ArrayList는 동기화를 제공하지 않는다. 필요하면 외부에서 동기화해야 한다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -379,7 +379,7 @@
       "스레드 우선순위 변경"
     ],
     "answer": "새 작업은 거부, 진행 중 작업은 완료",
-    "explain": "shutdown은 신규 제출을 막고, 이미 제출된 작업은 완료되게 한다.",
+    "explanation": "shutdown은 신규 제출을 막고, 이미 제출된 작업은 완료되게 한다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -387,7 +387,7 @@
     "question": "Stream의 중간 연산이 아닌 것은?",
     "choices": ["map", "filter", "collect", "distinct"],
     "answer": "collect",
-    "explain": "collect는 종단 연산이며, map/filter/distinct는 중간 연산이다.",
+    "explanation": "collect는 종단 연산이며, map/filter/distinct는 중간 연산이다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -400,7 +400,7 @@
       "메서드 인라인"
     ],
     "answer": "스레드 간 임계 구역 보호",
-    "explain": "동기화 블록/메서드를 통해 한 시점에 하나의 스레드만 진입하도록 보장한다.",
+    "explanation": "동기화 블록/메서드를 통해 한 시점에 하나의 스레드만 진입하도록 보장한다.",
     "level": "NORMAL",
     "categoryId": 1
   },
@@ -409,7 +409,7 @@
     "question": "JVM 메모리 중 스레드마다 별도로 할당되는 영역은?",
     "choices": ["Heap", "Stack", "Method Area", "Metaspace"],
     "answer": "Stack",
-    "explain": "각 스레드는 자신만의 호출 스택(Stack)을 가진다. 객체 인스턴스는 주로 Heap에 있다.",
+    "explanation": "각 스레드는 자신만의 호출 스택(Stack)을 가진다. 객체 인스턴스는 주로 Heap에 있다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -422,7 +422,7 @@
       "스케줄링"
     ],
     "answer": "바이트코드를 즉시 기계어로 변환해 최적화 실행",
-    "explain": "JIT은 실행 중 자주 호출되는 바이트코드를 네이티브 코드로 컴파일해 성능을 높인다.",
+    "explanation": "JIT은 실행 중 자주 호출되는 바이트코드를 네이티브 코드로 컴파일해 성능을 높인다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -435,7 +435,7 @@
       "스케줄링 향상"
     ],
     "answer": "가시성 보장 및 재정렬 억제",
-    "explain": "volatile 변수는 쓰기-읽기 시 가시성을 보장하고 특정 재정렬을 막지만 원자적 복합 연산을 보장하지는 않는다.",
+    "explanation": "volatile 변수는 쓰기-읽기 시 가시성을 보장하고 특정 재정렬을 막지만 원자적 복합 연산을 보장하지는 않는다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -448,7 +448,7 @@
       "System.gc() 호출"
     ],
     "answer": "System.gc() 호출",
-    "explain": "GC 호출은 happens-before 보장을 제공하지 않는다.",
+    "explanation": "GC 호출은 happens-before 보장을 제공하지 않는다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -456,7 +456,7 @@
     "question": "equals를 재정의할 때 반드시 같이 재정의해야 하는 메서드는?",
     "choices": ["toString", "hashCode", "clone", "finalize"],
     "answer": "hashCode",
-    "explain": "equals/hashCode 계약을 만족하려면 함께 재정의해야 한다.",
+    "explanation": "equals/hashCode 계약을 만족하려면 함께 재정의해야 한다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -469,7 +469,7 @@
       "읽기 차단"
     ],
     "answer": "세그먼트 방식/버킷 락 혹은 CAS 등 조합",
-    "explain": "구현 버전에 따라 세그먼트/버킷 락/CAS 등으로 동시성을 높인다.",
+    "explanation": "구현 버전에 따라 세그먼트/버킷 락/CAS 등으로 동시성을 높인다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -482,7 +482,7 @@
       "가비지 컬렉션을 비활성화"
     ],
     "answer": "데이터 분할 비용과 순서 보장이 성능에 영향",
-    "explain": "병렬 스트림은 작업 특성, 데이터 크기, 순서 유무 등에 따라 성능 이점이 달라진다.",
+    "explanation": "병렬 스트림은 작업 특성, 데이터 크기, 순서 유무 등에 따라 성능 이점이 달라진다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -495,7 +495,7 @@
       "싱글톤 패턴"
     ],
     "answer": "위임 모델(Parent Delegation)",
-    "explain": "상위 로더에 먼저 위임해 보안과 일관성을 확보하는 모델이다.",
+    "explanation": "상위 로더에 먼저 위임해 보안과 일관성을 확보하는 모델이다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -503,7 +503,7 @@
     "question": "synchronized보다 세밀한 락 제어와 조건 대기를 제공하는 클래스는?",
     "choices": ["Object", "ReentrantLock", "Semaphore", "CountDownLatch"],
     "answer": "ReentrantLock",
-    "explain": "ReentrantLock은 조건 객체(Condition)와 공정성 등 고급 기능을 제공한다.",
+    "explanation": "ReentrantLock은 조건 객체(Condition)와 공정성 등 고급 기능을 제공한다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -516,7 +516,7 @@
       "네트워킹 향상"
     ],
     "answer": "작업을 분할/정복해 병렬 처리",
-    "explain": "큰 작업을 작은 작업으로 재귀적으로 나누어 병렬 수행한다.",
+    "explanation": "큰 작업을 작은 작업으로 재귀적으로 나누어 병렬 수행한다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -529,7 +529,7 @@
       "스케줄링 고정"
     ],
     "answer": "락이 필요 없어 상태 경합이 없다",
-    "explain": "불변 객체는 동기화 없이도 안전하게 공유 가능하다.",
+    "explanation": "불변 객체는 동기화 없이도 안전하게 공유 가능하다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -542,7 +542,7 @@
       "둘 다 블로킹"
     ],
     "answer": "thenCompose는 평탄화, thenApply는 값 변환",
-    "explain": "thenCompose는 중첩된 Future를 평탄화하고, thenApply는 결과 값을 변환한다.",
+    "explanation": "thenCompose는 중첩된 Future를 평탄화하고, thenApply는 결과 값을 변환한다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -555,7 +555,7 @@
       "GC 튜닝"
     ],
     "answer": "불변적 데이터 캐리어 간결 선언",
-    "explain": "record는 필드를 기반으로 equals/hashCode/toString 등을 자동 생성하는 데이터 전용 클래스다.",
+    "explanation": "record는 필드를 기반으로 equals/hashCode/toString 등을 자동 생성하는 데이터 전용 클래스다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -568,7 +568,7 @@
       "직렬화 지원"
     ],
     "answer": "상속 허용 범위를 제한해 계층 제어",
-    "explain": "sealed는 어떤 클래스/인터페이스가 상속/구현 가능한지를 제한한다.",
+    "explanation": "sealed는 어떤 클래스/인터페이스가 상속/구현 가능한지를 제한한다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -581,7 +581,7 @@
       "클래스 로딩"
     ],
     "answer": "저수준 메모리/동시성 연산에 대한 안전한 핸들",
-    "explain": "sun.misc.Unsafe 대체로 도입되어 메모리 장벽/원자 연산 등을 안전하게 제공한다.",
+    "explanation": "sun.misc.Unsafe 대체로 도입되어 메모리 장벽/원자 연산 등을 안전하게 제공한다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -594,7 +594,7 @@
       "스캐빈징 제거"
     ],
     "answer": "예측 가능한 짧은 일시정지 시간",
-    "explain": "G1은 힙을 영역으로 나눠 병렬/동시 수집을 통해 예측 가능한 짧은 STW를 지향한다.",
+    "explanation": "G1은 힙을 영역으로 나눠 병렬/동시 수집을 통해 예측 가능한 짧은 STW를 지향한다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -607,7 +607,7 @@
       "클래스 로딩 가속"
     ],
     "answer": "스택 할당/동기화 제거 가능",
-    "explain": "객체가 스레드 밖으로 탈출하지 않으면 스택 할당 및 락 제거가 가능해진다.",
+    "explanation": "객체가 스레드 밖으로 탈출하지 않으면 스택 할당 및 락 제거가 가능해진다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -620,7 +620,7 @@
       "사운드"
     ],
     "answer": "동시성 유틸리티(락, 큐, 실행자 등)",
-    "explain": "스레드 풀, 락, 동시 컬렉션 등 다양한 동시성 도구를 제공한다.",
+    "explanation": "스레드 풀, 락, 동시 컬렉션 등 다양한 동시성 도구를 제공한다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -633,7 +633,7 @@
       "클래스 로딩"
     ],
     "answer": "명령/메모리 접근 순서 제어",
-    "explain": "CPU/컴파일러 재정렬을 제어하여 가시성과 순서를 보장한다.",
+    "explanation": "CPU/컴파일러 재정렬을 제어하여 가시성과 순서를 보장한다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -646,7 +646,7 @@
       "예외 제거"
     ],
     "answer": "캐스팅 코드 감소와 가독성 향상",
-    "explain": "instanceof 검사와 캐스팅을 결합해 보일러플레이트를 줄인다.",
+    "explanation": "instanceof 검사와 캐스팅을 결합해 보일러플레이트를 줄인다.",
     "level": "HARD",
     "categoryId": 1
   },
@@ -659,7 +659,7 @@
       "스레드 안전 보장"
     ],
     "answer": "문자열 리터럴에 줄바꿈/따옴표를 간결히 표현",
-    "explain": "세 개의 따옴표로 감싸서 멀티라인 문자열을 쉽게 작성할 수 있다.",
+    "explanation": "세 개의 따옴표로 감싸서 멀티라인 문자열을 쉽게 작성할 수 있다.",
     "level": "HARD",
     "categoryId": 1
   }

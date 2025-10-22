@@ -24,7 +24,7 @@ public enum QuizPrompt {
     "question": "string",
     "choices": ["string","string","string","string"],
     "answer": "string",
-    "explain": "string",
+    "explanation": "string",
     "level": "EASY|NORMAL|HARD",
     "categoryId": <number>
   }
@@ -35,7 +35,7 @@ public enum QuizPrompt {
 - choices는 정확히 4개.
 - answer는 choices 중 하나와 **문자열이 완전히 동일**해야 한다(앞뒤 공백/마침표/조사 금지).
 - question은 한 문장, 60자 이내. 불필요한 수식어·중복 금지.
-- explain은 1~2문장, 120자 이내. 핵심 근거만 간결히.
+- explanation 1~2문장, 120자 이내. 핵심 근거만 간결히.
 - choices 각 항목은 8~30자, 서로 의미 중복/동의어 금지.
 - level이 RANDOM이면 EASY/NORMAL/HARD 혼합. 특정 레벨이면 전부 그 레벨.
 - topic과 skillTagCode 범위를 벗어나지 말 것.
@@ -59,7 +59,7 @@ public enum QuizPrompt {
 - categoryId: <number>
 - level: EASY|NORMAL|HARD|RANDOM
 - topic: string | '제한 없음'
-- items: 오답 문항 요약 JSON (question/choices/correctAnswer/explain 포함)
+- items: 오답 문항 요약 JSON (question/choices/correctAnswer/explanation 포함)
 
 출력 스키마:
 [
@@ -67,7 +67,7 @@ public enum QuizPrompt {
     "question": "string",
     "choices": ["string","string","string","string"],
     "answer": "string",
-    "explain": "string",
+    "explanation": "string",
     "level": "EASY|NORMAL|HARD",
     "categoryId": <number>
   }
@@ -78,7 +78,7 @@ public enum QuizPrompt {
 - choices는 정확히 4개.
 - answer는 choices 중 하나와 **문자열이 완전히 동일**해야 한다.
 - question은 한 문장, 60자 이내.
-- explain은 1~2문장, 120자 이내.
+- explanation 1~2문장, 120자 이내.
 - choices 각 항목은 8~30자, 서로 의미 중복/동의어 금지.
 - level이 RANDOM이면 EASY/NORMAL/HARD 혼합. 특정 레벨이면 전부 그 레벨.
 - topic/입력 items의 개념군을 벗어나지 말 것.

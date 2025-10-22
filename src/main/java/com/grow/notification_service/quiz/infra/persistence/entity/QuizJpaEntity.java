@@ -37,7 +37,7 @@ public class QuizJpaEntity {
 	@Column(nullable = false, columnDefinition = "TEXT")
 	private String answer;
 
-	@Column(columnDefinition = "TEXT")
+	@Column(name = "explanation", columnDefinition = "TEXT")
 	private String explain;
 
 	@Enumerated(EnumType.STRING)

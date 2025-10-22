@@ -8,7 +8,7 @@
       "데이터 검색 언어"
     ],
     "answer": "구조적 질의 언어",
-    "explain": "SQL은 Structured Query Language의 약자로, '구조적 질의 언어'라 불린다.",
+    "explanation": "SQL은 Structured Query Language의 약자로, '구조적 질의 언어'라 불린다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -16,7 +16,7 @@
     "question": "데이터를 조회할 때 사용하는 SQL 명령어는?",
     "choices": ["SELECT", "INSERT", "DELETE", "UPDATE"],
     "answer": "SELECT",
-    "explain": "SELECT 문은 테이블에서 데이터를 조회할 때 사용한다.",
+    "explanation": "SELECT 문은 테이블에서 데이터를 조회할 때 사용한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -24,7 +24,7 @@
     "question": "테이블에 새로운 행을 추가하는 명령어는?",
     "choices": ["INSERT", "SELECT", "DROP", "UPDATE"],
     "answer": "INSERT",
-    "explain": "INSERT INTO 문은 새로운 데이터를 테이블에 삽입할 때 사용한다.",
+    "explanation": "INSERT INTO 문은 새로운 데이터를 테이블에 삽입할 때 사용한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -32,7 +32,7 @@
     "question": "테이블의 모든 데이터를 삭제하지만 구조는 유지하는 명령어는?",
     "choices": ["DELETE", "DROP", "TRUNCATE", "REMOVE"],
     "answer": "TRUNCATE",
-    "explain": "TRUNCATE는 테이블의 구조는 그대로 두고 데이터를 모두 삭제한다.",
+    "explanation": "TRUNCATE는 테이블의 구조는 그대로 두고 데이터를 모두 삭제한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -40,7 +40,7 @@
     "question": "결과 집합을 정렬할 때 사용하는 절은?",
     "choices": ["ORDER BY", "GROUP BY", "HAVING", "DISTINCT"],
     "answer": "ORDER BY",
-    "explain": "ORDER BY 절은 SELECT 결과를 오름차순 또는 내림차순으로 정렬한다.",
+    "explanation": "ORDER BY 절은 SELECT 결과를 오름차순 또는 내림차순으로 정렬한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -53,7 +53,7 @@
       "데이터 배포 언어"
     ],
     "answer": "데이터 정의 언어",
-    "explain": "DDL(Data Definition Language)은 데이터베이스 객체의 구조를 정의하는 언어다.",
+    "explanation": "DDL(Data Definition Language)은 데이터베이스 객체의 구조를 정의하는 언어다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -61,7 +61,7 @@
     "question": "새로운 테이블을 생성하는 명령어는?",
     "choices": ["NEW TABLE", "CREATE TABLE", "MAKE TABLE", "ADD TABLE"],
     "answer": "CREATE TABLE",
-    "explain": "CREATE TABLE 구문은 새 테이블을 정의하고 생성한다.",
+    "explanation": "CREATE TABLE 구문은 새 테이블을 정의하고 생성한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -69,7 +69,7 @@
     "question": "행을 그룹화할 때 사용하는 SQL 절은?",
     "choices": ["ORDER BY", "GROUP BY", "HAVING", "LIMIT"],
     "answer": "GROUP BY",
-    "explain": "GROUP BY 절은 특정 컬럼 값을 기준으로 행들을 그룹화한다.",
+    "explanation": "GROUP BY 절은 특정 컬럼 값을 기준으로 행들을 그룹화한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -77,7 +77,7 @@
     "question": "행의 개수를 세는 SQL 함수는?",
     "choices": ["COUNT()", "SUM()", "AVG()", "MAX()"],
     "answer": "COUNT()",
-    "explain": "COUNT() 함수는 결과 집합의 행 수를 반환한다.",
+    "explanation": "COUNT() 함수는 결과 집합의 행 수를 반환한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -85,7 +85,7 @@
     "question": "테이블에서 레코드를 고유하게 식별하는 키는?",
     "choices": ["기본 키", "외래 키", "보조 키", "후보 키"],
     "answer": "기본 키",
-    "explain": "기본 키(Primary Key)는 테이블에서 각 행을 유일하게 식별한다.",
+    "explanation": "기본 키(Primary Key)는 테이블에서 각 행을 유일하게 식별한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -93,7 +93,7 @@
     "question": "데이터를 수정할 때 사용하는 SQL 명령어는?",
     "choices": ["UPDATE", "INSERT", "ALTER", "DROP"],
     "answer": "UPDATE",
-    "explain": "UPDATE 문은 기존 데이터를 변경할 때 사용한다.",
+    "explanation": "UPDATE 문은 기존 데이터를 변경할 때 사용한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -101,7 +101,7 @@
     "question": "문자열 패턴 검색에 사용하는 연산자는?",
     "choices": ["LIKE", "BETWEEN", "IN", "EXISTS"],
     "answer": "LIKE",
-    "explain": "LIKE 연산자는 문자열에서 특정 패턴을 검색할 때 사용된다.",
+    "explanation": "LIKE 연산자는 문자열에서 특정 패턴을 검색할 때 사용된다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -109,7 +109,7 @@
     "question": "테이블을 완전히 삭제하는 명령어는?",
     "choices": ["DELETE", "DROP", "REMOVE", "TRUNCATE"],
     "answer": "DROP",
-    "explain": "DROP TABLE은 테이블 구조와 데이터를 모두 삭제한다.",
+    "explanation": "DROP TABLE은 테이블 구조와 데이터를 모두 삭제한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -117,7 +117,7 @@
     "question": "중복을 제거하고 고유한 값만 반환하는 키워드는?",
     "choices": ["DISTINCT", "UNIQUE", "FILTER", "LIMIT"],
     "answer": "DISTINCT",
-    "explain": "DISTINCT 키워드는 SELECT 결과에서 중복된 값을 제거한다.",
+    "explanation": "DISTINCT 키워드는 SELECT 결과에서 중복된 값을 제거한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -130,7 +130,7 @@
       "UPDATE COLUMN"
     ],
     "answer": "ALTER TABLE ... ADD COLUMN",
-    "explain": "ALTER TABLE 명령으로 새로운 컬럼을 추가할 수 있다.",
+    "explanation": "ALTER TABLE 명령으로 새로운 컬럼을 추가할 수 있다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -143,7 +143,7 @@
       "데이터 관리 언어"
     ],
     "answer": "데이터 조작 언어",
-    "explain": "DML(Data Manipulation Language)은 데이터를 조작하는 언어다.",
+    "explanation": "DML(Data Manipulation Language)은 데이터를 조작하는 언어다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -151,7 +151,7 @@
     "question": "집계된 그룹을 필터링할 때 사용하는 절은?",
     "choices": ["WHERE", "HAVING", "ORDER BY", "LIMIT"],
     "answer": "HAVING",
-    "explain": "HAVING 절은 GROUP BY 결과에 조건을 적용한다.",
+    "explanation": "HAVING 절은 GROUP BY 결과에 조건을 적용한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -164,7 +164,7 @@
       "CLEAR DATABASE"
     ],
     "answer": "DROP DATABASE",
-    "explain": "DROP DATABASE는 데이터베이스 자체를 제거한다.",
+    "explanation": "DROP DATABASE는 데이터베이스 자체를 제거한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -172,7 +172,7 @@
     "question": "컬럼 값이 중복되지 않도록 보장하는 제약 조건은?",
     "choices": ["UNIQUE", "PRIMARY KEY", "CHECK", "DEFAULT"],
     "answer": "UNIQUE",
-    "explain": "UNIQUE 제약 조건은 각 값이 고유해야 함을 보장한다.",
+    "explanation": "UNIQUE 제약 조건은 각 값이 고유해야 함을 보장한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -180,7 +180,7 @@
     "question": "트랜잭션의 변경 사항을 영구적으로 반영하는 명령은?",
     "choices": ["COMMIT", "ROLLBACK", "SAVE", "END"],
     "answer": "COMMIT",
-    "explain": "COMMIT은 트랜잭션에서 수행된 작업을 데이터베이스에 확정 저장한다.",
+    "explanation": "COMMIT은 트랜잭션에서 수행된 작업을 데이터베이스에 확정 저장한다.",
     "level": "EASY",
     "categoryId": 3
   },
@@ -188,7 +188,7 @@
     "question": "두 테이블에서 공통된 값이 있는 행만 반환하는 조인은?",
     "choices": ["INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL OUTER JOIN"],
     "answer": "INNER JOIN",
-    "explain": "INNER JOIN은 두 테이블에서 일치하는 값이 있는 행만 반환한다.",
+    "explanation": "INNER JOIN은 두 테이블에서 일치하는 값이 있는 행만 반환한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -196,7 +196,7 @@
     "question": "왼쪽 테이블의 모든 행과 오른쪽 테이블에서 일치하는 행을 반환하는 조인은?",
     "choices": ["INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "CROSS JOIN"],
     "answer": "LEFT JOIN",
-    "explain": "LEFT JOIN은 왼쪽 테이블의 모든 행을 반환하고, 오른쪽 테이블에서 일치하는 값이 없으면 NULL을 채운다.",
+    "explanation": "LEFT JOIN은 왼쪽 테이블의 모든 행을 반환하고, 오른쪽 테이블에서 일치하는 값이 없으면 NULL을 채운다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -204,7 +204,7 @@
     "question": "GROUP BY 전에 개별 행을 필터링할 때 사용하는 절은?",
     "choices": ["WHERE", "HAVING", "ORDER BY", "DISTINCT"],
     "answer": "WHERE",
-    "explain": "WHERE 절은 집계 전에 행 단위로 필터링한다.",
+    "explanation": "WHERE 절은 집계 전에 행 단위로 필터링한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -212,7 +212,7 @@
     "question": "두 쿼리 결과를 합치고 중복을 제거하는 키워드는?",
     "choices": ["UNION", "UNION ALL", "JOIN", "INTERSECT"],
     "answer": "UNION",
-    "explain": "UNION은 두 쿼리의 결과를 합치되 중복을 제거한다.",
+    "explanation": "UNION은 두 쿼리의 결과를 합치되 중복을 제거한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -220,7 +220,7 @@
     "question": "평균값을 반환하는 SQL 집계 함수는?",
     "choices": ["SUM()", "AVG()", "MAX()", "COUNT()"],
     "answer": "AVG()",
-    "explain": "AVG() 함수는 선택된 컬럼 값들의 평균을 반환한다.",
+    "explanation": "AVG() 함수는 선택된 컬럼 값들의 평균을 반환한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -233,7 +233,7 @@
       "Clustered 인덱스"
     ],
     "answer": "B-Tree 인덱스",
-    "explain": "B-Tree 인덱스는 가장 널리 쓰이는 인덱스 구조로, 탐색과 정렬에 유리하다.",
+    "explanation": "B-Tree 인덱스는 가장 널리 쓰이는 인덱스 구조로, 탐색과 정렬에 유리하다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -246,7 +246,7 @@
       "데이터가 영구히 저장됨"
     ],
     "answer": "모든 작업이 전부 수행되거나 전혀 수행되지 않음",
-    "explain": "원자성은 트랜잭션을 더 이상 나눌 수 없는 단위로 보장한다.",
+    "explanation": "원자성은 트랜잭션을 더 이상 나눌 수 없는 단위로 보장한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -254,7 +254,7 @@
     "question": "기본 키의 일부에만 종속되는 부분 종속성을 제거하는 정규형은?",
     "choices": ["1정규형", "2정규형", "3정규형", "BCNF"],
     "answer": "2정규형",
-    "explain": "2정규형은 부분 종속을 제거하여 더 높은 정규화 단계를 만든다.",
+    "explanation": "2정규형은 부분 종속을 제거하여 더 높은 정규화 단계를 만든다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -262,7 +262,7 @@
     "question": "SELECT 결과에서 컬럼 이름을 변경할 때 사용하는 키워드는?",
     "choices": ["AS", "ALIAS", "RENAME", "CHANGE"],
     "answer": "AS",
-    "explain": "AS 키워드를 사용하여 컬럼이나 테이블에 별칭을 부여한다.",
+    "explanation": "AS 키워드를 사용하여 컬럼이나 테이블에 별칭을 부여한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -270,7 +270,7 @@
     "question": "두 테이블을 연결하는 데 사용되는 키는?",
     "choices": ["기본 키", "외래 키", "보조 키", "후보 키"],
     "answer": "외래 키",
-    "explain": "외래 키는 다른 테이블의 기본 키를 참조하여 관계를 형성한다.",
+    "explanation": "외래 키는 다른 테이블의 기본 키를 참조하여 관계를 형성한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -278,7 +278,7 @@
     "question": "테이블의 구조를 변경할 때 사용하는 명령어는?",
     "choices": ["ALTER TABLE", "UPDATE", "CHANGE TABLE", "REPLACE"],
     "answer": "ALTER TABLE",
-    "explain": "ALTER TABLE은 컬럼 추가, 삭제, 수정 등 구조 변경에 사용된다.",
+    "explanation": "ALTER TABLE은 컬럼 추가, 삭제, 수정 등 구조 변경에 사용된다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -286,7 +286,7 @@
     "question": "두 테이블의 모든 가능한 조합을 반환하는 조인은?",
     "choices": ["CROSS JOIN", "INNER JOIN", "LEFT JOIN", "RIGHT JOIN"],
     "answer": "CROSS JOIN",
-    "explain": "CROSS JOIN은 Cartesian Product를 반환한다.",
+    "explanation": "CROSS JOIN은 Cartesian Product를 반환한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -294,7 +294,7 @@
     "question": "리스트 안에 값이 포함되는지 확인하는 SQL 연산자는?",
     "choices": ["IN", "BETWEEN", "LIKE", "ALL"],
     "answer": "IN",
-    "explain": "IN 연산자는 지정한 리스트 값과 비교한다.",
+    "explanation": "IN 연산자는 지정한 리스트 값과 비교한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -307,7 +307,7 @@
       "변경이 영구 저장됨"
     ],
     "answer": "데이터가 항상 유효한 상태로 유지됨",
-    "explain": "일관성은 무결성 제약 조건이 항상 만족되도록 보장한다.",
+    "explanation": "일관성은 무결성 제약 조건이 항상 만족되도록 보장한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -315,7 +315,7 @@
     "question": "두 쿼리 결과를 합치되 중복을 제거하지 않는 키워드는?",
     "choices": ["UNION ALL", "UNION", "JOIN", "INTERSECT"],
     "answer": "UNION ALL",
-    "explain": "UNION ALL은 두 결과 집합을 합치면서 중복도 허용한다.",
+    "explanation": "UNION ALL은 두 결과 집합을 합치면서 중복도 허용한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -328,7 +328,7 @@
       "외래 키 검증"
     ],
     "answer": "조건에 맞는 값만 허용",
-    "explain": "CHECK 제약 조건은 특정 조건을 만족해야 데이터를 허용한다.",
+    "explanation": "CHECK 제약 조건은 특정 조건을 만족해야 데이터를 허용한다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -336,7 +336,7 @@
     "question": "READ COMMITTED 격리 수준에서는 어떤 현상이 발생할 수 있는가?",
     "choices": ["더티 리드", "반복 불가능 읽기", "팬텀 리드", "데드락"],
     "answer": "반복 불가능 읽기",
-    "explain": "READ COMMITTED는 커밋된 데이터만 읽지만, 동일한 행을 다시 조회할 때 값이 바뀔 수 있다.",
+    "explanation": "READ COMMITTED는 커밋된 데이터만 읽지만, 동일한 행을 다시 조회할 때 값이 바뀔 수 있다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -349,7 +349,7 @@
       "Clustered 인덱스"
     ],
     "answer": "Bitmap 인덱스",
-    "explain": "Bitmap 인덱스는 성별, Boolean 값처럼 값의 종류가 적을 때 효율적이다.",
+    "explanation": "Bitmap 인덱스는 성별, Boolean 값처럼 값의 종류가 적을 때 효율적이다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -362,7 +362,7 @@
       "인덱스는 저장 공간이 필요 없다"
     ],
     "answer": "인덱스는 쓰기 성능에 영향을 줄 수 있다",
-    "explain": "인덱스는 읽기 성능을 높이지만, 삽입/수정/삭제 시 성능에 부담을 줄 수 있다.",
+    "explanation": "인덱스는 읽기 성능을 높이지만, 삽입/수정/삭제 시 성능에 부담을 줄 수 있다.",
     "level": "NORMAL",
     "categoryId": 3
   },
@@ -375,7 +375,7 @@
       "SERIALIZABLE"
     ],
     "answer": "REPEATABLE READ",
-    "explain": "REPEATABLE READ는 동일한 행을 여러 번 읽을 때 일관성을 보장하지만, 새로운 행 삽입으로 인한 팬텀 리드는 발생할 수 있다.",
+    "explanation": "REPEATABLE READ는 동일한 행을 여러 번 읽을 때 일관성을 보장하지만, 새로운 행 삽입으로 인한 팬텀 리드는 발생할 수 있다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -383,7 +383,7 @@
     "question": "트랜잭션 이상 현상 중 동일 조건으로 반복 조회 시 새로운 행이 나타나는 문제는?",
     "choices": ["더티 리드", "반복 불가능 읽기", "팬텀 리드", "데드락"],
     "answer": "팬텀 리드",
-    "explain": "팬텀 리드는 동일 조건으로 반복 조회할 때 새로운 데이터가 나타나거나 사라지는 현상이다.",
+    "explanation": "팬텀 리드는 동일 조건으로 반복 조회할 때 새로운 데이터가 나타나거나 사라지는 현상이다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -396,7 +396,7 @@
       "낙관적으로 처리한다"
     ],
     "answer": "락을 사용하여 충돌을 미리 방지한다",
-    "explain": "비관적 제어는 충돌 가능성을 예상하고 미리 락을 걸어 충돌을 예방한다.",
+    "explanation": "비관적 제어는 충돌 가능성을 예상하고 미리 락을 걸어 충돌을 예방한다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -409,7 +409,7 @@
       "클러스터, 애플리케이션, 영속성"
     ],
     "answer": "일관성, 가용성, 파티션 허용성",
-    "explain": "CAP 정리에 따르면 세 가지 속성 중 동시에 만족할 수 있는 것은 두 가지뿐이다.",
+    "explanation": "CAP 정리에 따르면 세 가지 속성 중 동시에 만족할 수 있는 것은 두 가지뿐이다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -422,7 +422,7 @@
       "스케줄링"
     ],
     "answer": "대기-그래프(Wait-for graph)",
-    "explain": "대기-그래프는 트랜잭션 간 대기 관계를 그래프로 나타내어 교착 상태를 탐지한다.",
+    "explanation": "대기-그래프는 트랜잭션 간 대기 관계를 그래프로 나타내어 교착 상태를 탐지한다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -435,7 +435,7 @@
       "락 완전 제거"
     ],
     "answer": "읽기 시점별 일관성 제공",
-    "explain": "MVCC는 각 트랜잭션이 독립된 데이터 버전을 보도록 하여 읽기 일관성을 보장한다.",
+    "explanation": "MVCC는 각 트랜잭션이 독립된 데이터 버전을 보도록 하여 읽기 일관성을 보장한다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -448,7 +448,7 @@
       "인덱스 최적화"
     ],
     "answer": "수평적 확장성 확보",
-    "explain": "샤딩은 대량의 데이터를 여러 서버에 분산 저장하여 확장성을 높인다.",
+    "explanation": "샤딩은 대량의 데이터를 여러 서버에 분산 저장하여 확장성을 높인다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -456,7 +456,7 @@
     "question": "이벤트 기반으로 변경된 데이터를 다른 시스템에 전송하는 기술은?",
     "choices": ["CDC(Change Data Capture)", "ETL", "샤딩", "리플리케이션"],
     "answer": "CDC(Change Data Capture)",
-    "explain": "CDC는 데이터 변경 사항을 추적하여 다른 시스템으로 전달하는 기술이다.",
+    "explanation": "CDC는 데이터 변경 사항을 추적하여 다른 시스템으로 전달하는 기술이다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -469,7 +469,7 @@
       "확장성"
     ],
     "answer": "최종적 일관성(Eventual Consistency)",
-    "explain": "BASE는 'Basically Available, Soft state, Eventual consistency'의 약자이다.",
+    "explanation": "BASE는 'Basically Available, Soft state, Eventual consistency'의 약자이다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -482,7 +482,7 @@
       "일부 노드 불일치 허용"
     ],
     "answer": "항상 최신 데이터 보장",
-    "explain": "강한 일관성은 모든 읽기 연산에서 최신 데이터를 반환한다.",
+    "explanation": "강한 일관성은 모든 읽기 연산에서 최신 데이터를 반환한다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -490,7 +490,7 @@
     "question": "트랜잭션의 직렬 가능성을 보장하는 대표적인 기법은?",
     "choices": ["2단계 로킹(2PL)", "낙관적 제어", "타임스탬프 순서", "MVCC"],
     "answer": "2단계 로킹(2PL)",
-    "explain": "2단계 로킹은 락 획득 단계와 해제 단계로 나누어 직렬 가능성을 보장한다.",
+    "explanation": "2단계 로킹은 락 획득 단계와 해제 단계로 나누어 직렬 가능성을 보장한다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -503,7 +503,7 @@
       "장애 허용 증가"
     ],
     "answer": "실시간 일관성 보장",
-    "explain": "동기 복제는 모든 노드에 동시에 기록되므로 일관성이 즉시 보장된다.",
+    "explanation": "동기 복제는 모든 노드에 동시에 기록되므로 일관성이 즉시 보장된다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -511,7 +511,7 @@
     "question": "SQL 옵티마이저가 실행 계획을 선택할 때 고려하는 요소가 아닌 것은?",
     "choices": ["인덱스 구조", "데이터 분포", "네트워크 속도", "쿼리 통계"],
     "answer": "네트워크 속도",
-    "explain": "옵티마이저는 주로 인덱스, 통계, 데이터 분포를 고려하지만 네트워크 속도는 직접 고려하지 않는다.",
+    "explanation": "옵티마이저는 주로 인덱스, 통계, 데이터 분포를 고려하지만 네트워크 속도는 직접 고려하지 않는다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -524,7 +524,7 @@
       "Serializable"
     ],
     "answer": "Eventual Consistency",
-    "explain": "분산 환경에서는 성능과 가용성을 위해 최종적 일관성을 선택하는 경우가 많다.",
+    "explanation": "분산 환경에서는 성능과 가용성을 위해 최종적 일관성을 선택하는 경우가 많다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -537,7 +537,7 @@
       "데이터 무결성 손실"
     ],
     "answer": "쓰기 성능 저하",
-    "explain": "인덱스는 삽입/수정/삭제 시에도 갱신되므로 쓰기 성능에 부담이 된다.",
+    "explanation": "인덱스는 삽입/수정/삭제 시에도 갱신되므로 쓰기 성능에 부담이 된다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -545,7 +545,7 @@
     "question": "데이터베이스 파티셔닝(Partitioning)의 주요 목적은?",
     "choices": ["보안 강화", "성능과 관리성 향상", "데이터 압축", "중복 제거"],
     "answer": "성능과 관리성 향상",
-    "explain": "파티셔닝은 대규모 테이블을 분할하여 성능과 관리성을 높인다.",
+    "explanation": "파티셔닝은 대규모 테이블을 분할하여 성능과 관리성을 높인다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -558,7 +558,7 @@
       "직렬 실행 강제"
     ],
     "answer": "충돌 발생 후 검증",
-    "explain": "낙관적 기법은 충돌이 드물다고 가정하고 트랜잭션 종료 시점에 검증한다.",
+    "explanation": "낙관적 기법은 충돌이 드물다고 가정하고 트랜잭션 종료 시점에 검증한다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -571,7 +571,7 @@
       "락을 중복 생성"
     ],
     "answer": "세밀한 락을 큰 범위의 락으로 전환",
-    "explain": "락 에스컬레이션은 많은 개별 락을 효율적으로 관리하기 위해 테이블 단위 락으로 승격하는 것이다.",
+    "explanation": "락 에스컬레이션은 많은 개별 락을 효율적으로 관리하기 위해 테이블 단위 락으로 승격하는 것이다.",
     "level": "HARD",
     "categoryId": 3
   },
@@ -584,7 +584,7 @@
       "보안 강화"
     ],
     "answer": "데이터 분할 기준 제공",
-    "explain": "샤딩 키는 데이터를 어떤 노드에 분배할지 결정하는 기준이 된다.",
+    "explanation": "샤딩 키는 데이터를 어떤 노드에 분배할지 결정하는 기준이 된다.",
     "level": "HARD",
     "categoryId": 3
   }
