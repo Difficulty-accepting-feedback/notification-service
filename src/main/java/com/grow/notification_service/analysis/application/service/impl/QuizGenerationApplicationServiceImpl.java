@@ -318,7 +318,7 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 				one.put("question", q.getQuestion());
 				one.put("choices", q.getChoices());
 				one.put("correctAnswer", q.getAnswer());
-				one.put("explain", q.getExplain());
+				one.put("explanation", q.getExplain());
 				items.add(one);
 			}
 			Map<String, Object> llmInput = new LinkedHashMap<>();
@@ -349,7 +349,7 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 				String question = n.path("question").asText("");
 				ArrayNode ca = (ArrayNode) n.path("choices");
 				String answer  = n.path("answer").asText("");
-				String explain = n.path("explain").asText("");
+				String explanation = n.path("explanation").asText("");
 				String levelStr = n.path("level").asText("");
 				JsonNode catNode = n.path("categoryId");
 
@@ -377,7 +377,7 @@ public class QuizGenerationApplicationServiceImpl implements QuizGenerationAppli
 					throw new AnalysisException(ErrorCode.ANALYSIS_QUIZ_GENERATION_PARSE_FAILED);
 				}
 
-				out.add(Quiz.create(question, choices, answer, explain, level, categoryId));
+				out.add(Quiz.create(question, choices, answer, explanation, level, categoryId));
 			}
 			return out;
 
