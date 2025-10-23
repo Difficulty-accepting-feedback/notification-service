@@ -33,14 +33,14 @@ public class AiReviewRequestedDltConsumer {
 		log.error("[AI-REVIEW DLT] topic={} partition={} offset={} ts={} payload={}",
 			topic, offset, timestamp, safeMsg);
 
-		// slackErrorSendService.sendError(
-		// 	"AI 복습 퀴즈 생성 - 처리 실패",
-		// 	"카테고리: [AI-REVIEW]\n"
-		// 		+ "상세: AI 복습 퀴즈 생성 요청이 재시도 끝에 실패하여 DLT로 이동했습니다.\n"
-		// 		+ "메타: topic=%s, offset=%s, timestamp=%s"
-		// 		.formatted(topic, String.valueOf(offset), String.valueOf(timestamp)),
-		// 	safeMsg
-		// );
+		slackErrorSendService.sendError(
+			"AI 복습 퀴즈 생성 - 처리 실패",
+			"카테고리: [AI-REVIEW]\n"
+				+ "상세: AI 복습 퀴즈 생성 요청이 재시도 끝에 실패하여 DLT로 이동했습니다.\n"
+				+ "메타: topic=%s, offset=%s, timestamp=%s"
+				.formatted(topic, String.valueOf(offset), String.valueOf(timestamp)),
+			safeMsg
+		);
 
 		log.info("[AI-REVIEW DLT] 처리 완료");
 	}
