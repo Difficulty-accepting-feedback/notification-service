@@ -12,6 +12,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.grow.notification_service.global.exception.ErrorCode;
 import com.grow.notification_service.global.exception.QuizException;
@@ -108,7 +110,7 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 	 * @return SubmitAnswersResponse
 	 */
 	@Override
-	@Transactional
+	@Transactional(readOnly = true)
 	@Timed(value = "quiz_submit_latency")
 	@Counted(value = "quiz_submit_total")
 	public SubmitAnswersResponse submitAnswers(Long memberId, SubmitAnswersRequest req, Long groupId) {
@@ -142,7 +144,10 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 		boolean anyWrong = false;
 
 		// 결과 리스트
-		List<SubmitAnswerResult> results = new java.util.ArrayList<>();
+		List<SubmitAnswerResult> results = new ArrayList<>();
+
+		// 커밋 후 실행할 작업들을 모아둔다 (Kafka/Redis 등 외부 I/O)
+		List<Runnable> afterCommitTasks = new ArrayList<>();
 
 		// 각 항목 처리
 		for (SubmitAnswerItem item : req.items()) {
@@ -170,48 +175,63 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 				quiz.getCategoryId()
 			));
 
-			// 회원 퀴즈 결과 저장
-			try {
-				eventPublisher.publish(
-					memberId,
-					quiz.getQuizId(),
-					quiz.getCategoryId(),
-					quiz.getLevel().name(),
-					item.answer(),
-					ok
-				);
-				log.info("[QUIZ][알림][발행] memberId={}, quizId={}, correct={}", memberId, quiz.getQuizId(), ok);
-				metrics.result("quiz_answer_event_result_total", "result", "success");
-			} catch (Exception e) {
-				log.warn("[QUIZ][알림][발행실패] memberId={}, quizId={}, err={}",
-					memberId, quiz.getQuizId(), e.toString(), e);
-				metrics.result("quiz_answer_event_result_total",
-					"result", "error",
-					"exception", e.getClass().getSimpleName()
-				);
-			}
+			// 회원 퀴즈 결과 저장 (커밋 후 발행) — 람다 캡처용 로컬 final 복사
+			final Long fMemberId = memberId;
+			final Long fQuizId = quiz.getQuizId();
+			final Long fCategoryId = quiz.getCategoryId();
+			final String fLevel = quiz.getLevel().name();
+			final String fSubmitted = item.answer();
+			final boolean fOk = ok;
+
+			afterCommitTasks.add(() -> {
+				try {
+					eventPublisher.publish(
+						fMemberId,
+						fQuizId,
+						fCategoryId,
+						fLevel,
+						fSubmitted,
+						fOk
+					);
+					log.info("[QUIZ][알림][발행] memberId={}, quizId={}, correct={}", fMemberId, fQuizId, fOk);
+					metrics.result("quiz_answer_event_result_total", "result", "success");
+				} catch (Exception e) {
+					log.warn("[QUIZ][알림][발행실패] memberId={}, quizId={}, err={}",
+						fMemberId, fQuizId, e.toString(), e);
+					metrics.result("quiz_answer_event_result_total",
+						"result", "error",
+						"exception", e.getClass().getSimpleName()
+					);
+				}
+			});
 		}
 
-		// 오답이 하나라도 있었다면, 이번 제출에 대해 단 1회만 ai-review 요청 발행
+		// 오답이 하나라도 있었다면, 이번 제출에 대해 단 1회만 ai-review 요청 발행 (커밋 후)
 		if (anyWrong) {
-			try {
-				aiReviewRequestedProducer.publish(
-					memberId,
-					categoryId,
-					req.mode(),
-					null,
-					null
-				);
-				log.info("[AI-REVIEW][REQUESTED][PUBLISHED] memberId={}, categoryId={}", memberId, categoryId);
-				metrics.result("ai_review_request_result_total", "result", "success");
-			} catch (Exception e) {
-				log.warn("[AI-REVIEW][REQUESTED][FAIL] memberId={}, categoryId={}, err={}",
-					memberId, categoryId, e.toString(), e);
-				metrics.result("ai_review_request_result_total",
-					"result", "error",
-					"exception", e.getClass().getSimpleName()
-				);
-			}
+			final Long fMemberIdForReview = memberId;
+			final Long fCategoryIdForReview = categoryId;
+			final String fMode = req.mode(); // effectively final
+
+			afterCommitTasks.add(() -> {
+				try {
+					aiReviewRequestedProducer.publish(
+						fMemberIdForReview,
+						fCategoryIdForReview,
+						fMode,
+						null,
+						null
+					);
+					log.info("[AI-REVIEW][REQUESTED][PUBLISHED] memberId={}, categoryId={}", fMemberIdForReview, fCategoryIdForReview);
+					metrics.result("ai_review_request_result_total", "result", "success");
+				} catch (Exception e) {
+					log.warn("[AI-REVIEW][REQUESTED][FAIL] memberId={}, categoryId={}, err={}",
+						fMemberIdForReview, fCategoryIdForReview, e.toString(), e);
+					metrics.result("ai_review_request_result_total",
+						"result", "error",
+						"exception", e.getClass().getSimpleName()
+					);
+				}
+			});
 		}
 
 		// 응답 생성
@@ -219,11 +239,48 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 
 		// 어떤 그룹의 어떤 멤버가 문제를 풀고 몇 점을 맞았는지 저장 (redis)
 		// 저장: groupId 키 아래 memberId를 멤버로, 점수를 스코어로
-		String key = DAILY_QUIZ_RANK_KEY + groupId;
-		redisTemplate.opsForZSet().add(key, memberId.toString(), correct);
+		final Long fGroupId = groupId;
+		final Long fMemberIdForRank = memberId;
+		final int fCorrect = correct;
 
-		LocalDateTime expirationTime = LocalDate.now().plusDays(1).atStartOfDay();  // 다음 날 00:00
-		redisTemplate.expireAt(key, Date.from(expirationTime.atZone(ZoneId.systemDefault()).toInstant()));
+		afterCommitTasks.add(() -> {
+			try {
+				String key = DAILY_QUIZ_RANK_KEY + fGroupId;
+				redisTemplate.opsForZSet().add(key, fMemberIdForRank.toString(), fCorrect);
+
+				LocalDateTime expirationTime = LocalDate.now().plusDays(1).atStartOfDay();  // 다음 날 00:00
+				redisTemplate.expireAt(key, Date.from(expirationTime.atZone(ZoneId.systemDefault()).toInstant()));
+			} catch (Exception e) {
+				log.warn("[QUIZ][RANK][REDIS][FAIL] memberId={}, groupId={}, err={}",
+					fMemberIdForRank, fGroupId, e.toString(), e);
+			}
+		});
+
+		// ▶ 트랜잭션 커밋 이후에 외부 I/O를 실행 (TxUtils 없이 직접 등록)
+		if (TransactionSynchronizationManager.isActualTransactionActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					for (Runnable task : afterCommitTasks) {
+						try {
+							task.run();
+						} catch (Exception e) {
+							// 커밋 이후 예외는 응답에 영향 X. 로깅만 수행.
+							log.warn("[AFTER_COMMIT][TASK][FAIL] err={}", e.toString(), e);
+						}
+					}
+				}
+			});
+		} else {
+			// 트랜잭션이 없으면 즉시 실행
+			for (Runnable task : afterCommitTasks) {
+				try {
+					task.run();
+				} catch (Exception e) {
+					log.warn("[AFTER_COMMIT][TASK][FAIL-NOTX] err={}", e.toString(), e);
+				}
+			}
+		}
 
 		log.info("[QUIZ][제출][성공] memberId={}, total={}, correct={}", memberId, itemCount, correct);
 		metrics.result("quiz_submit_result_total",
