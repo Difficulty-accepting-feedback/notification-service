@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -118,6 +119,24 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 		// skillTag -> categoryId 매핑
 		final Long categoryId = registry.resolveOrThrow(req.skillTag());
 
+		// 요청 quizId들을 중복 제거하여 배치 조회
+		List<Long> ids = req.items().stream()
+			.map(SubmitAnswerItem::quizId)
+			.distinct()
+			.toList();
+
+		// 배치 조회 (요청에 들어온 퀴즈 한번에 로드)
+		List<Quiz> quizzes = quizRepository.findByIds(ids);
+		Map<Long, Quiz> quizMap = quizzes.stream()
+			.collect(java.util.stream.Collectors.toMap(Quiz::getQuizId, q -> q));
+
+		// 존재하지 않는 ID 사전 검증 (있으면 즉시 실패)
+		List<Long> missing = ids.stream().filter(id -> !quizMap.containsKey(id)).toList();
+		if (!missing.isEmpty()) {
+			log.warn("[QUIZ][제출][거절] 존재하지 않는 quizId들: {}", missing);
+			throw new QuizException(ErrorCode.QUIZ_NOT_FOUND);
+		}
+
 		// 정답 처리
 		int correct = 0;
 		boolean anyWrong = false;
@@ -127,10 +146,7 @@ public class QuizApplicationServiceImpl implements QuizApplicationService {
 
 		// 각 항목 처리
 		for (SubmitAnswerItem item : req.items()) {
-			Quiz quiz = quizRepository.findById(item.quizId()).orElseThrow(() -> {
-				log.warn("[QUIZ][제출][거절] quizId={} 를 찾을 수 없음", item.quizId());
-				return new QuizException(ErrorCode.QUIZ_NOT_FOUND);
-			});
+			Quiz quiz = quizMap.get(item.quizId());
 
 			// 카테고리 불일치 방지
 			if (!quiz.getCategoryId().equals(categoryId)) {
