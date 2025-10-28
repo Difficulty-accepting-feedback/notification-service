@@ -67,11 +67,11 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker
-        run: docker build --platform linux/arm64 -t ${{ secrets.DOCKERHUB_USERNAME }}/grow-payment-server:${{ github.sha }} -t ${{ secrets.DOCKERHUB_USERNAME }}/grow-payment-server:latest .
+        run: docker build --platform linux/arm64 -t ${{ secrets.DOCKERHUB_USERNAME }}/grow-notification-server:${{ github.sha }} -t ${{ secrets.DOCKERHUB_USERNAME }}/grow-notification-server:latest .
       - name: Push Docker
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/grow-payment-server:${{ github.sha }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/grow-payment-server:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/grow-notification-server:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/grow-notification-server:latest
 
       # GitOps manifests 레포 체크아웃 (별도 레포이므로 PAT 사용)
       - name: Checkout manifests repo
@@ -90,28 +90,28 @@ jobs:
       # Kustomization에서 이미지 태그 업데이트 (newTag: github.sha)
       - name: Update Kustomization image tag
         run: |
-          cd manifests/payment
+          cd manifests/notification
           ls -la
           if [ ! -f kustomization.yaml ]; then
             echo "Error: kustomization.yaml not found!"
             exit 1
           fi
           cat kustomization.yaml
-          kustomize edit set image ${{ secrets.DOCKERHUB_USERNAME }}/grow-payment-server=${{ secrets.DOCKERHUB_USERNAME }}/grow-payment-server:${{ github.sha }}
+          kustomize edit set image ${{ secrets.DOCKERHUB_USERNAME }}/grow-notification-server=${{ secrets.DOCKERHUB_USERNAME }}/grow-notification-server:${{ github.sha }}
           cat kustomization.yaml
         working-directory: ${{ github.workspace }}
 
       # Git 변경 커밋 및 푸시 (ArgoCD 트리거)
       - name: Commit and push manifests update
         run: |
-          cd manifests/payment
+          cd manifests/notification
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add kustomization.yaml
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "📝 update: image tag 변경 - ${{ github.sha }} for grow-payment-server"
+            git commit -m "📝 update: image tag 변경 - ${{ github.sha }} for grow-notification-server"
             git push origin main
           fi
         working-directory: ${{ github.workspace }}
